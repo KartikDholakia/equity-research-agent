@@ -20,9 +20,9 @@ Goal: Run `python main.py --ticker AAPL` and get a trustworthy verdict card.
 Exit criterion: verdict card on AAPL/NVDA/MSFT feels like something you'd
 actually act on.
 
-- [ ] Create project folder structure (agents/, data/, tools/, tests/)
-- [ ] Create requirements.txt with initial dependencies
-- [ ] Create .env.example with all required keys
+- [x] Create project folder structure (agents/, data/, tools/, tests/)
+- [x] Create requirements.txt with initial dependencies
+- [x] Create .env.example with all required keys
 - [ ] Create main.py with CLI argument parsing (--ticker, --market)
 - [ ] Build data/fmp.py
       - fetch_income_statement(ticker)
