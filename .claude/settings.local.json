@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:indianapi.in)",
+      "WebFetch(domain:eodhd.com)",
+      "WebFetch(domain:finnhub.io)"
+    ]
+  }
+}
