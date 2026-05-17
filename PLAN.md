@@ -23,7 +23,7 @@ actually act on.
 - [x] Create project folder structure (agents/, data/, tools/, tests/)
 - [x] Create requirements.txt with initial dependencies
 - [x] Create .env.example with all required keys
-- [ ] Create main.py with CLI argument parsing (--ticker, --market)
+- [x] Create main.py with CLI argument parsing (--ticker, --market)
 - [ ] Build data/fmp.py
       - fetch_income_statement(ticker)
       - fetch_balance_sheet(ticker)
