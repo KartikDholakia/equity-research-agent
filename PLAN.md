@@ -34,15 +34,15 @@ actually act on.
       - fetch_current_price(ticker)
       - fetch_price_history(ticker, period)
       - fetch_technical_indicators(ticker)
-- [ ] Build agents/quality_agent.py
+- [x] Build agents/quality_agent.py
       - Inputs: income statement, balance sheet, cash flow
       - Checks: ROE, ROCE, FCF consistency, debt levels, interest coverage
       - Output: agent signal dict (see CLAUDE.md schema)
-- [ ] Build agents/value_agent.py
+- [x] Build agents/value_agent.py
       - Inputs: key metrics, price, earnings history
       - Checks: DCF (3 scenarios), Graham formula, PEG, P/E vs 5yr avg
       - Output: agent signal dict
-- [ ] Build agents/bear_case_agent.py
+- [x] Build agents/bear_case_agent.py
       - Inputs: all financial statements
       - Checks: all auto-reject red flags from SPEC.md
       - Output: agent signal dict with flags list populated if issues found
@@ -199,3 +199,7 @@ Candidates to build (confirm at Phase 5 retrospective):
 | 2026-05-17 | Orchestrator must route 4 query types: analyze / screen / review / allocate        |
 | 2026-05-17 | Portfolio review: mixed output — brief pulse + flag issues only, runs on schedule   |
 | 2026-05-17 | Allocation query output: ranked candidates + suggested ₹ sizing per position        |
+| 2026-05-18 | quality_agent scores 6 checks (ROE, ROCE, FCF, OCF quality, D/E, interest coverage) weighted to 10 |
+| 2026-05-18 | value_agent: DCF growth rates kept as module constants — Phase 3 will derive from historical FCF CAGR |
+| 2026-05-18 | Graham formula intentionally kept for value signals; irrelevant for asset-light/buyback-heavy stocks |
+| 2026-05-18 | bear_case_agent automates 3 of 7 auto-reject flags (CFQ, receivables, debt growth); remaining 4 need manual/news data not available in Phase 1 |
