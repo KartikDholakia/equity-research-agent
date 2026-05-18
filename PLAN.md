@@ -24,13 +24,13 @@ actually act on.
 - [x] Create requirements.txt with initial dependencies
 - [x] Create .env.example with all required keys
 - [x] Create main.py with CLI argument parsing (--ticker, --market)
-- [ ] Build data/fmp.py
+- [x] Build data/fmp.py
       - fetch_income_statement(ticker)
       - fetch_balance_sheet(ticker)
       - fetch_cash_flow(ticker)
       - fetch_key_metrics(ticker)
       - fetch_earnings_history(ticker)
-- [ ] Build data/yfinance_client.py
+- [x] Build data/yfinance_client.py
       - fetch_current_price(ticker)
       - fetch_price_history(ticker, period)
       - fetch_technical_indicators(ticker)
