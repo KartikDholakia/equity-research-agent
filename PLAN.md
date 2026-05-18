@@ -46,7 +46,7 @@ actually act on.
       - Inputs: all financial statements
       - Checks: all auto-reject red flags from SPEC.md
       - Output: agent signal dict with flags list populated if issues found
-- [ ] Build tools/formatters.py
+- [x] Build tools/formatters.py
       - format_verdict_card(verdict_dict) → pretty printed string
 - [ ] Build agents/orchestrator.py (Phase 1 — 3 agents only)
       - Runs quality + value + bear case agents in parallel
