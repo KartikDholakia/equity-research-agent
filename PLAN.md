@@ -48,7 +48,7 @@ actually act on.
       - Output: agent signal dict with flags list populated if issues found
 - [x] Build tools/formatters.py
       - format_verdict_card(verdict_dict) → pretty printed string
-- [ ] Build agents/orchestrator.py (Phase 1 — 3 agents only)
+- [x] Build agents/orchestrator.py (Phase 1 — 3 agents only)
       - Runs quality + value + bear case agents in parallel
       - Synthesizes into verdict dict
       - Calls formatter and prints to CLI

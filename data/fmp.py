@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_URL = "https://financialmodelingprep.com/api/v3"
+BASE_URL = "https://financialmodelingprep.com/stable"
 
 
 def _api_key() -> str:
@@ -49,10 +49,7 @@ def fetch_income_statement(ticker: str, years: int = 5) -> list[dict[str, Any]]:
     Key fields: revenue, grossProfit, operatingIncome, netIncome,
                 eps, epsdiluted, ebitda.
     """
-    return _get(
-        f"income-statement/{ticker}",
-        {"period": "annual", "limit": years},
-    )
+    return _get("income-statement", {"symbol": ticker, "period": "annual", "limit": years})
 
 
 def fetch_balance_sheet(ticker: str, years: int = 5) -> list[dict[str, Any]]:
@@ -61,10 +58,7 @@ def fetch_balance_sheet(ticker: str, years: int = 5) -> list[dict[str, Any]]:
     Key fields: totalAssets, totalDebt, totalEquity, cashAndCashEquivalents,
                 totalCurrentLiabilities, longTermDebt.
     """
-    return _get(
-        f"balance-sheet-statement/{ticker}",
-        {"period": "annual", "limit": years},
-    )
+    return _get("balance-sheet-statement", {"symbol": ticker, "period": "annual", "limit": years})
 
 
 def fetch_cash_flow(ticker: str, years: int = 5) -> list[dict[str, Any]]:
@@ -73,10 +67,7 @@ def fetch_cash_flow(ticker: str, years: int = 5) -> list[dict[str, Any]]:
     Key fields: operatingCashFlow, freeCashFlow, capitalExpenditure,
                 dividendsPaid, netIncome.
     """
-    return _get(
-        f"cash-flow-statement/{ticker}",
-        {"period": "annual", "limit": years},
-    )
+    return _get("cash-flow-statement", {"symbol": ticker, "period": "annual", "limit": years})
 
 
 def fetch_key_metrics(ticker: str, years: int = 5) -> list[dict[str, Any]]:
@@ -85,18 +76,6 @@ def fetch_key_metrics(ticker: str, years: int = 5) -> list[dict[str, Any]]:
     Key fields: roe, roic, debtToEquity, interestCoverage, peRatio,
                 pegRatio, evToEbitda, priceToBookRatio, freeCashFlowYield.
     """
-    return _get(
-        f"key-metrics/{ticker}",
-        {"period": "annual", "limit": years},
-    )
+    return _get("key-metrics", {"symbol": ticker, "period": "annual", "limit": years})
 
 
-def fetch_earnings_history(ticker: str) -> list[dict[str, Any]]:
-    """Fetch EPS actual vs estimated for the last 8 reported quarters.
-
-    Key fields: date, epsActual, epsEstimated, revenueActual,
-                revenueEstimated.
-    """
-    results = _get(f"earnings-surprises/{ticker}")
-    # Most recent 8 quarters — FMP returns oldest-first, so reverse then slice.
-    return list(reversed(results))[:8]

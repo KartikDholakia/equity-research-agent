@@ -7,7 +7,6 @@ _W_DCF = 3.0       # DCF valuation — present value of projected free cash flow
 _W_GRAHAM = 2.5    # Graham number — conservative floor based on earnings and book value
 _W_PEG = 2.0       # PEG ratio — P/E relative to earnings growth (Lynch's core metric)
 _W_PE_HIST = 1.5   # P/E vs own 5yr average — cheap/expensive relative to own history
-_W_EPS_BEAT = 1.0  # EPS beat rate — proxy for management guidance credibility
 
 # DCF model parameters — isolate here so Phase 3 can derive growth from history instead
 _DCF_DISCOUNT_RATE = 0.10    # cost of equity
@@ -22,7 +21,6 @@ def analyze(
     ticker: str,
     key_metrics: list[dict[str, Any]],
     price_data: dict[str, Any],
-    earnings_history: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Run valuation checks and return the standard agent output dict.
 
@@ -30,7 +28,6 @@ def analyze(
         ticker: stock symbol e.g. "AAPL"
         key_metrics: from fmp.fetch_key_metrics() — 5 years of annual metrics
         price_data: from yfinance_client.fetch_current_price()
-        earnings_history: from fmp.fetch_earnings_history() — last 8 quarters
     """
     current_price = float(price_data.get("price") or 0)
 
@@ -38,14 +35,12 @@ def analyze(
     graham = _check_graham(key_metrics, current_price)
     peg = _check_peg(key_metrics)
     pe_hist = _check_pe_history(key_metrics)
-    eps_beat = _check_eps_beat_rate(earnings_history)
 
     score = round(
-        dcf["points"] + graham["points"] + peg["points"]
-        + pe_hist["points"] + eps_beat["points"],
+        dcf["points"] + graham["points"] + peg["points"] + pe_hist["points"],
         2,
     )
-    flags = dcf["flags"] + graham["flags"] + peg["flags"] + pe_hist["flags"] + eps_beat["flags"]
+    flags = dcf["flags"] + graham["flags"] + peg["flags"] + pe_hist["flags"]
     fair_value = _fair_value(dcf, graham)
 
     return {
@@ -61,7 +56,6 @@ def analyze(
             "graham": graham,
             "peg": peg,
             "pe_history": pe_hist,
-            "eps_beat_rate": eps_beat,
         },
         "flags": flags,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -177,27 +171,6 @@ def _check_pe_history(key_metrics: list[dict[str, Any]]) -> dict[str, Any]:
         "flags": [f"P/E is {pct_vs_avg:.0f}% above own 5yr average"] if pct_vs_avg > 30 else [],
     }
 
-
-def _check_eps_beat_rate(earnings_history: list[dict[str, Any]]) -> dict[str, Any]:
-    """Fraction of last 8 quarters where EPS actual >= estimated."""
-    valid = [
-        q for q in earnings_history
-        if q.get("epsActual") is not None and q.get("epsEstimated") is not None
-    ]
-
-    if not valid:
-        return {"beat_rate_pct": None, "quarters_checked": 0, "points": 0.0, "flags": []}
-
-    beats = sum(1 for q in valid if (q.get("epsActual") or 0) >= (q.get("epsEstimated") or 0))
-    rate = round(beats / len(valid) * 100, 1)
-    pts = _W_EPS_BEAT if rate >= 75 else (_W_EPS_BEAT * 0.5 if rate >= 50 else 0.0)
-
-    return {
-        "beat_rate_pct": rate,
-        "quarters_checked": len(valid),
-        "points": round(pts, 2),
-        "flags": [f"EPS beat rate only {rate:.0f}% — guidance credibility concern"] if rate < 50 else [],
-    }
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────────

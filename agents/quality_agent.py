@@ -126,7 +126,7 @@ def _check_fcf(cash_flows: list[dict[str, Any]]) -> dict[str, Any]:
     if not values:
         return {"values": [], "positive_years": None, "total_years": None, "points": 0.0, "flags": ["FCF data unavailable"]}
 
-    pos = sum(1 for v in values if v > 0)
+    pos = sum(1 for v in values if v and v > 0)
     n = len(values)
     pts = _W_FCF if pos >= n else (_W_FCF * 0.7 if pos >= n * 0.6 else (_W_FCF * 0.3 if pos >= n * 0.4 else 0.0))
 
