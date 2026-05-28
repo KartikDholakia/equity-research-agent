@@ -55,7 +55,42 @@ actually act on.
       - Design for 4 query types from the start: analyze / screen /
         review / allocate — only "analyze" ships in Phase 1, but routing
         logic must accommodate the rest without a rewrite
-- [ ] Test on AAPL, NVDA, MSFT — verify output looks correct
+- [x] Test on AAPL, NVDA, MSFT — verify output looks correct
+- [ ] Fix bugs found in architecture review (do before LLM refactor)
+      - Add fetch_earnings_history(ticker, years=5) to data/fmp.py.
+        Use the FMP stable endpoint "earnings" with params symbol=ticker, limit=years.
+        Return list[dict] like the other fetch_* functions in that file.
+        This function was listed as a Phase 1 deliverable but was never added.
+        It is needed by the growth_agent in Phase 2 for EPS CAGR calculation.
+        Signature: fetch_earnings_history(ticker: str, years: int = 5) -> list[dict[str, Any]]
+      - Fix run_analysis in agents/orchestrator.py (lines 19-26).
+        The except block currently calls print(...) and then raise, so the user
+        sees a clean error message immediately followed by a raw Python traceback.
+        Remove the re-raise. Print the error message and call sys.exit(1) instead,
+        so the CLI exits with a non-zero code without dumping a traceback.
+        Import sys at the top of the file if not already present.
+- [ ] Refactor agents to LLM-backed (Claude tool use)
+      - Replace rule-based scoring in quality_agent, value_agent, bear_case_agent
+      - Add key figures extractor (Layer 2) — ~15-20 clean numbers from raw statements
+      - Move metric functions to tool pool — tools return numbers, Claude reasons
+      - Add persona system prompts (tight) — Munger, Graham, Burry
+      - Wire tool use loop in each agent via Anthropic SDK
+      - Redesign _bull_reasons in agents/orchestrator.py (lines 139-159).
+        The current implementation digs into agent details dicts using hardcoded keys
+        like quality.get("details", {}).get("roe", {}).get("avg_pct"). Those keys
+        belong to the rule-based agents and will not exist after the LLM refactor.
+        Replace the function so it builds the bull reasons list by extracting
+        meaningful sentences from each agent's summary string field instead.
+        The summary field is guaranteed by the agent output schema and will survive
+        the refactor unchanged.
+      - Add prompt caching to each LLM agent (quality, value, bear case) via the
+        Anthropic SDK cache_control parameter. The system prompt (persona definition
+        + tool definitions) is identical on every call for a given agent, making it
+        the ideal cache breakpoint. Mark the system prompt content block with
+        cache_control={"type": "ephemeral"}. This cuts token cost by ~80% on
+        repeated runs of the same agent. See Anthropic prompt caching docs for
+        the exact API shape.
+      - See ARCHITECTURE.md for full design
 - [ ] Write tests/test_fmp.py and tests/test_agents.py (basic smoke tests)
 
 ---
@@ -64,6 +99,13 @@ actually act on.
 Goal: Same CLI works for Indian stocks. `python main.py --ticker ZOMATO.NS`
 Exit criterion: verdict card on ZOMATO.NS / HDFCBANK.NS feels accurate.
 
+- [ ] Fix currency symbol hardcode in agents/value_agent.py.
+      The _summary function (lines 189-196) builds strings like
+      "Fair value est. $X.XX vs current $Y.YY" regardless of market.
+      For Indian tickers ending in .NS or .BO the symbol should be ₹ not $.
+      Add a ticker: str parameter to _summary and to analyze (it already receives
+      ticker). Inside _summary, derive currency = "₹" if ticker ends with
+      ".NS" or ".BO" else "$", then use that variable in the f-string.
 - [ ] Extend data/yfinance_client.py for NSE/BSE tickers (.NS / .BO suffix)
       - fetch_fundamentals_india(ticker) — income stmt, balance sheet, CF
       - yfinance covers basic financials; use as primary Indian data source
@@ -203,3 +245,7 @@ Candidates to build (confirm at Phase 5 retrospective):
 | 2026-05-18 | value_agent: DCF growth rates kept as module constants — Phase 3 will derive from historical FCF CAGR |
 | 2026-05-18 | Graham formula intentionally kept for value signals; irrelevant for asset-light/buyback-heavy stocks |
 | 2026-05-18 | bear_case_agent automates 3 of 7 auto-reject flags (CFQ, receivables, debt growth); remaining 4 need manual/news data not available in Phase 1 |
+| 2026-05-24 | Architecture: 5-layer hybrid — Python for data/math, Claude (tool use) for reasoning. Persona-based agents with tight prompts. See ARCHITECTURE.md. |
+| 2026-05-24 | LangGraph deferred to Phase 5 — plain Anthropic SDK sufficient for Phase 1-4 parallel agent execution |
+| 2026-05-24 | Screener mode (Phase 3) uses two-speed system: Python pre-filter on 500 stocks, LLM only on shortlist of 20-30 — keeps cost under ₹20/run |
+| 2026-05-24 | Phase 1 refactor: current rule-based agents to be replaced with LLM agents (Python computes metrics, Claude reasons via persona prompts) |
