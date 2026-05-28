@@ -65,8 +65,10 @@ def analyze(
 # ── Checks ─────────────────────────────────────────────────────────────────────
 
 def _check_dcf(key_metrics: list[dict[str, Any]], current_price: float) -> dict[str, Any]:
-    """3-scenario DCF using FCF per share from key metrics."""
-    fcf_ps = key_metrics[0].get("freeCashFlowPerShare") if key_metrics else None
+    """3-scenario DCF using FCF per share derived from freeCashFlowYield × price."""
+    # Stable API dropped freeCashFlowPerShare; freeCashFlowYield = FCF_ps / price
+    fcf_yield = key_metrics[0].get("freeCashFlowYield") if key_metrics else None
+    fcf_ps = (fcf_yield * current_price) if (fcf_yield and current_price > 0) else None
 
     if not fcf_ps or fcf_ps <= 0 or current_price <= 0:
         return {
@@ -105,28 +107,22 @@ def _dcf_intrinsic_value(fcf0: float, growth_rate: float) -> float:
 
 
 def _check_graham(key_metrics: list[dict[str, Any]], current_price: float) -> dict[str, Any]:
-    """Graham number = sqrt(22.5 × EPS × BVPS). Only valid for positive EPS and book value."""
+    """Graham number sourced directly from FMP's pre-computed grahamNumber field."""
     if not key_metrics:
         return {"value": None, "points": 0.0, "flags": ["Graham data unavailable"]}
 
-    eps = key_metrics[0].get("netIncomePerShare")
-    bvps = key_metrics[0].get("bookValuePerShare")
+    # Stable API provides grahamNumber directly; netIncomePerShare/bookValuePerShare dropped
+    graham_value = key_metrics[0].get("grahamNumber")
 
-    if not eps or eps <= 0 or not bvps or bvps <= 0 or current_price <= 0:
-        return {
-            "value": None, "eps": eps, "bvps": bvps,
-            "points": 0.0,
-            "flags": ["Graham formula N/A — negative or missing EPS / book value"],
-        }
+    if not graham_value or graham_value <= 0 or current_price <= 0:
+        return {"value": None, "points": 0.0, "flags": ["Graham formula N/A — negative or missing data"]}
 
-    graham_value = round((22.5 * eps * bvps) ** 0.5, 2)
+    graham_value = round(graham_value, 2)
     mos = round((graham_value - current_price) / graham_value * 100, 1)
     pts = _W_GRAHAM if mos >= 30 else (_W_GRAHAM * 0.7 if mos >= 15 else (_W_GRAHAM * 0.4 if mos >= 0 else 0.0))
 
     return {
         "value": graham_value,
-        "eps": round(eps, 2),
-        "bvps": round(bvps, 2),
         "margin_of_safety_pct": mos,
         "points": round(pts, 2),
         "flags": [f"Trading {abs(mos):.0f}% above Graham value"] if mos < -10 else [],
@@ -151,7 +147,12 @@ def _check_peg(key_metrics: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _check_pe_history(key_metrics: list[dict[str, Any]]) -> dict[str, Any]:
     """Compare current P/E to own 5-year average — cheap relative to own history."""
-    pe_values = [m["peRatio"] for m in key_metrics if (m.get("peRatio") or 0) > 0]
+    # Stable API dropped peRatio; derive from earningsYield = EPS/Price = 1/PE
+    pe_values = [
+        round(1 / m["earningsYield"], 2)
+        for m in key_metrics
+        if (m.get("earningsYield") or 0) > 0
+    ]
 
     if len(pe_values) < 2:
         return {"current": None, "avg_5yr": None, "pct_vs_avg": None, "points": 0.0, "flags": []}

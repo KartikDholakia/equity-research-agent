@@ -2,7 +2,12 @@
 import argparse
 import sys
 from typing import Literal
+
 from agents.orchestrator import run_analysis
+
+import io
+if isinstance(sys.stdout, io.TextIOWrapper):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 QueryType = Literal["analyze", "screen", "review", "allocate"]
 
@@ -82,7 +87,6 @@ def route(args: argparse.Namespace) -> tuple[QueryType, dict]:
 
 def run_analyze(ticker: str, market: str) -> None:
     """Delegate to the orchestrator for single-stock analysis."""
-    # TODO: Add try catch block
     run_analysis(ticker=ticker, market=market)
 
 
