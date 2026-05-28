@@ -5,6 +5,8 @@ A personal AI-powered equity research platform for a retail investor
 in Bangalore. It analyzes Indian and US stocks, tracks a portfolio,
 and surfaces investment decisions. Full product spec is in SPEC.md.
 Current build status and next tasks are in PLAN.md.
+System architecture is in ARCHITECTURE.md.
+PM persona instructions are in .claude/PM_AGENT.md — read it when user says "enter PM mode".
 
 ## Before Every Session
 1. Read SPEC.md to understand the product we are building
