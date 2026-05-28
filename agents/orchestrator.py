@@ -1,5 +1,6 @@
 """Orchestrator — routes queries and synthesizes agent outputs into verdict cards."""
 import concurrent.futures
+import sys
 from datetime import datetime, timezone
 from typing import Any
 
@@ -23,7 +24,7 @@ def run_analysis(ticker: str, market: str = "us") -> None:
         print(format_verdict_card(verdict))
     except Exception as exc:
         print(f"Analysis failed for {ticker}: {exc}")
-        raise
+        sys.exit(1)
 
 
 # ── Routing stubs — wire up in later phases ─────────────────────────────────────
