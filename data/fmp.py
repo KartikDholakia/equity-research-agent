@@ -79,3 +79,9 @@ def fetch_key_metrics(ticker: str, years: int = 5) -> list[dict[str, Any]]:
     return _get("key-metrics", {"symbol": ticker, "period": "annual", "limit": years})
 
 
+def fetch_earnings_history(ticker: str, years: int = 5) -> list[dict[str, Any]]:
+    """Fetch historical earnings for the last N years.
+
+    Key fields: date, eps, estimatedEps, revenueEstimated, revenue.
+    """
+    return _get("earnings", {"symbol": ticker, "limit": years})
