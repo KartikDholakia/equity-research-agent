@@ -1,0 +1,57 @@
+[
+  {
+    "date": "2024-09-28",
+    "symbol": "AAPL",
+    "totalAssets": 364980000000,
+    "totalDebt": 101304000000,
+    "totalStockholdersEquity": 56950000000,
+    "totalEquity": 56950000000,
+    "totalCurrentLiabilities": 176392000000,
+    "netReceivables": 32747000000,
+    "accountsReceivable": 32747000000
+  },
+  {
+    "date": "2023-09-30",
+    "symbol": "AAPL",
+    "totalAssets": 352583000000,
+    "totalDebt": 109280000000,
+    "totalStockholdersEquity": 62146000000,
+    "totalEquity": 62146000000,
+    "totalCurrentLiabilities": 145308000000,
+    "netReceivables": 29508000000,
+    "accountsReceivable": 29508000000
+  },
+  {
+    "date": "2022-09-24",
+    "symbol": "AAPL",
+    "totalAssets": 352755000000,
+    "totalDebt": 119691000000,
+    "totalStockholdersEquity": 50672000000,
+    "totalEquity": 50672000000,
+    "totalCurrentLiabilities": 153982000000,
+    "netReceivables": 28184000000,
+    "accountsReceivable": 28184000000
+  },
+  {
+    "date": "2021-09-25",
+    "symbol": "AAPL",
+    "totalAssets": 351002000000,
+    "totalDebt": 122430000000,
+    "totalStockholdersEquity": 63090000000,
+    "totalEquity": 63090000000,
+    "totalCurrentLiabilities": 125481000000,
+    "netReceivables": 26278000000,
+    "accountsReceivable": 26278000000
+  },
+  {
+    "date": "2020-09-26",
+    "symbol": "AAPL",
+    "totalAssets": 323888000000,
+    "totalDebt": 112436000000,
+    "totalStockholdersEquity": 65339000000,
+    "totalEquity": 65339000000,
+    "totalCurrentLiabilities": 105392000000,
+    "netReceivables": 16120000000,
+    "accountsReceivable": 16120000000
+  }
+]

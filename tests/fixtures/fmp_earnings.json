@@ -1,0 +1,47 @@
+[
+  {
+    "date": "2024-09-28",
+    "symbol": "AAPL",
+    "eps": 6.08,
+    "estimatedEps": 6.01,
+    "revenueEstimated": 385100000000,
+    "revenue": 391035000000,
+    "fiscalDateEnding": "2024-09-28"
+  },
+  {
+    "date": "2023-09-30",
+    "symbol": "AAPL",
+    "eps": 6.13,
+    "estimatedEps": 6.07,
+    "revenueEstimated": 381000000000,
+    "revenue": 383285000000,
+    "fiscalDateEnding": "2023-09-30"
+  },
+  {
+    "date": "2022-09-24",
+    "symbol": "AAPL",
+    "eps": 6.11,
+    "estimatedEps": 6.15,
+    "revenueEstimated": 388400000000,
+    "revenue": 394328000000,
+    "fiscalDateEnding": "2022-09-24"
+  },
+  {
+    "date": "2021-09-25",
+    "symbol": "AAPL",
+    "eps": 5.61,
+    "estimatedEps": 5.50,
+    "revenueEstimated": 362700000000,
+    "revenue": 365817000000,
+    "fiscalDateEnding": "2021-09-25"
+  },
+  {
+    "date": "2020-09-26",
+    "symbol": "AAPL",
+    "eps": 3.28,
+    "estimatedEps": 3.20,
+    "revenueEstimated": 271700000000,
+    "revenue": 274515000000,
+    "fiscalDateEnding": "2020-09-26"
+  }
+]
