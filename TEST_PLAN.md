@@ -4,9 +4,9 @@
 
 | Library | Purpose | Notes |
 |---|---|---|
-| `pytest` | Test runner | Already in requirements.txt |
-| `pytest-mock` | `mocker` fixture for patching | Already in requirements.txt |
-| `responses` | Mock HTTP calls (`requests` library) | **Add to requirements.txt** |
+| `pytest` | Test runner | In requirements.txt |
+| `pytest-mock` | `mocker` fixture for patching | In requirements.txt |
+| `responses` | Mock HTTP calls (`requests` library) | In requirements.txt |
 | `pytest-asyncio` | Async test support | Add in Phase 5 when LangGraph arrives |
 
 ---
@@ -15,13 +15,14 @@
 
 ```
 tests/
-├── __init__.py                  (exists)
+├── __init__.py
 ├── conftest.py                  ← shared pytest fixtures and sample data
 ├── fixtures/                    ← JSON snapshots of real API responses
 │   ├── fmp_income.json          ← 5-year AAPL-like income statement
 │   ├── fmp_balance.json         ← 5-year balance sheet
 │   ├── fmp_cashflow.json        ← 5-year cash flow statement
-│   └── fmp_key_metrics.json     ← 5-year key metrics (fcfYield, PEG, graham)
+│   ├── fmp_key_metrics.json     ← 5-year key metrics (fcfYield, PEG, graham)
+│   └── fmp_earnings.json        ← 5-year earnings history
 ├── unit/                        ← pure Python, zero network calls, fast
 │   ├── __init__.py
 │   ├── test_metrics.py          ← Layer 3: all compute_* functions
@@ -59,172 +60,71 @@ pytest --cov=. --cov-report=term-missing
 pytest tests/unit/test_metrics.py -v
 ```
 
-A `pytest.ini` (or `pyproject.toml [tool.pytest]`) section will be added during
-Milestone 1 boilerplate to configure test paths and markers.
-
 ---
 
-## Milestones
+## Phase 1 Coverage
 
-### Milestone 1 — Framework Boilerplate ✅
-Goal: `pytest` runs cleanly, discovers tests, markers work.
+**154 tests, all passing.** Covers Layers 1–4 of the Phase 1 architecture.
 
-- [x] Add `responses>=0.25.0` to `requirements.txt`
-- [x] Create `pytest.ini` with testpaths, markers (`unit`, `integration`), and
-      `filterwarnings` to silence third-party deprecation noise
-- [x] Create `tests/unit/__init__.py`
-- [x] Create `tests/integration/__init__.py`
-- [x] Create `tests/conftest.py` with shared fixtures:
-      - `sample_income_statements` — 5-row list[dict] matching FMP income-statement shape
-      - `sample_balance_sheets` — 5-row list[dict]
-      - `sample_cash_flows` — 5-row list[dict]
-      - `sample_key_metrics` — 5-row list[dict] (with fcfYield, pegRatio, grahamNumber)
-      - `sample_price_data` — dict with `price` key
-      - `sample_key_figures` — output of `extract_key_figures` called on the above
-- [x] Create `tests/fixtures/fmp_income.json` with realistic 5-year AAPL data
-- [x] Create `tests/fixtures/fmp_balance.json`
-- [x] Create `tests/fixtures/fmp_cashflow.json`
-- [x] Create `tests/fixtures/fmp_key_metrics.json`
-- [x] Create `tests/fixtures/fmp_earnings.json` (added for Milestone 4 test_fmp.py)
-- [x] Verify `pytest --collect-only` runs with 0 tests collected and 0 errors
+### Unit — Layer 3: `tools/metrics.py` (76 tests)
+`tests/unit/test_metrics.py`
 
----
+| Function | Cases covered |
+|---|---|
+| `compute_roe_trend` | Correct values; `consistent_above_15` true/false at 60% threshold; empty input; zero equity skipped |
+| `compute_roce_trend` | Correct values; zero capital employed year skipped; empty input |
+| `compute_fcf_consistency` | Positive year count; all-negative; empty input; values preserved |
+| `compute_ocf_quality` | No gaps; 1 gap then break; all gaps; gap broken mid-sequence; empty input |
+| `compute_debt_ratio` | Correct values; latest = index 0; zero equity skipped; empty input |
+| `compute_interest_coverage` | Correct values; empty expenses → no_debt; zero expense year skipped; empty OI after zip |
+| `compute_dcf` | bull > base > bear; all positive; MoS sign (over/undervalued); None/zero/negative yield → all None; zero/None price → all None |
+| `compute_graham` | Undervalued (positive MoS); overvalued (negative MoS); None inputs |
+| `compute_peg` | All 4 interpretation buckets; None/zero/negative → unavailable; rounding |
+| `compute_pe_history` | P/E from yields; pct_vs_avg sign; < 2 data points → None fields |
+| `compute_revenue_cagr` | Correct CAGR; multi-year; single year → None; zero oldest → None |
+| `compute_cash_flow_quality` | 0/1 gaps → no auto-reject; 2/3 gaps → auto-reject; gap broken mid-sequence |
+| `compute_receivables_growth` | < 3 data points → empty; clean growth → no flags; fast recv growth → flagged; declining revenue → not flagged |
+| `compute_debt_growth` | < 4 data points → safe defaults; 0/2 consecutive → no auto-reject; 3 consecutive → auto-reject; reset after break |
 
-### Milestone 2 — Unit Tests: Layer 3 (Metrics) ✅
-File: `tests/unit/test_metrics.py`
-Goal: Every `compute_*` function in `tools/metrics.py` is covered. 76 tests, all passing.
+### Unit — Layer 2: `tools/key_figures.py` (33 tests)
+`tests/unit/test_key_figures.py`
 
-- [ ] **compute_roe_trend**
-  - ROE values computed correctly across 5 years
-  - `consistent_above_15` is True when ≥ 60% of years exceed 15%
-  - `consistent_above_15` is False when < 60% exceed 15%
-  - Empty list input → returns safe defaults (no crash)
-  - Zero equity in a year → that year is skipped, no ZeroDivisionError
+- All 17 output keys present with correct Python types on full fixture data
+- `interestExpense` field absent → `interest_expenses = []`, no KeyError
+- `totalStockholdersEquity` absent, `totalEquity` present → equity fallback works
+- Both equity fields absent → row excluded from `equities` list
+- `netReceivables` absent → falls back to `accountsReceivable`; both absent → 0.0
+- `net_receivables` always emits one entry per row (unlike `_pull` which skips missing fields)
+- Empty income / balance / cash flow lists → all corresponding output lists are `[]`
+- `freeCashFlowYield` for 5 years → 3-year average of newest 3 only
+- Single-year FCF yield → averages that one value
+- All-negative FCF yields → `fcf_yield = None`
+- Mixed yields averaging to ≤ 0 → `fcf_yield = None`
+- `freeCashFlowYield` field absent → treated as missing
+- Empty `key_metrics` → `peg_ratio`, `graham_number`, `fcf_yield` all None
+- `price = 0` or missing → `current_price = None`
+- Negative `interestExpense` stored as absolute value
 
-- [ ] **compute_roce_trend**
-  - ROCE values computed correctly (operating income / capital employed)
-  - Zero capital employed year is skipped gracefully
+### Integration — Layer 1: `data/fmp.py` (14 tests)
+`tests/integration/test_fmp.py` — HTTP intercepted via `responses` library
 
-- [ ] **compute_fcf_consistency**
-  - Counts positive FCF years correctly
-  - All-negative FCF → positive_years = 0
-  - Empty input → returns zeroes
+- All 5 fetch functions return `list[dict]` with correct shape
+- Each endpoint hits the correct URL
+- FMP error payload `{"Error Message": "..."}` with HTTP 200 → raises `ValueError`
+- HTTP 404 → raises `requests.HTTPError`
+- `FMP_API_KEY` not set → raises `EnvironmentError` before any HTTP call
 
-- [ ] **compute_ocf_quality**
-  - Counts consecutive years where OCF < net income
-  - Breaks on first year where OCF ≥ net income (not total count)
+### Integration — Layer 4: agents (31 tests)
+`tests/integration/test_agents.py` — Anthropic SDK mocked via `pytest-mock`
 
-- [ ] **compute_debt_ratio**
-  - D/E ratios computed correctly; `latest` matches index 0
-  - Zero equity year is skipped
-
-- [ ] **compute_interest_coverage**
-  - Coverage values computed; `no_debt` flag is False when expense > 0
-  - Zero interest expense year is skipped
-  - Empty interest_expenses → `no_debt` is True
-
-- [ ] **compute_dcf**
-  - All three scenarios (bear 5%, base 10%, bull 15%) produce distinct values
-  - Base scenario margin_of_safety is negative when stock is overvalued
-  - `fcf_yield = None` → returns all None fields (no crash)
-  - `fcf_yield <= 0` → returns all None fields
-  - `current_price = 0` → returns all None fields
-
-- [ ] **compute_graham**
-  - Undervalued case (graham > price) → positive margin_of_safety_pct
-  - Overvalued case (price > graham) → negative margin_of_safety_pct
-  - `None` graham_number → returns None fields
-
-- [ ] **compute_peg**
-  - PEG < 1.0 → interpretation = "undervalued_growth"
-  - PEG 1.0–1.49 → "fair"
-  - PEG 1.5–1.99 → "slightly_expensive"
-  - PEG ≥ 2.0 → "expensive"
-  - `None` input → interpretation = "unavailable"
-
-- [ ] **compute_pe_history**
-  - Current P/E and 5yr average computed from earnings yields
-  - `pct_vs_avg` is positive when current P/E > average (expensive vs own history)
-  - Fewer than 2 data points → returns None fields (no crash)
-
-- [ ] **compute_revenue_cagr**
-  - 5-year CAGR computed correctly
-  - Only 1 year of data → `cagr_pct = None`
-  - Oldest revenue = 0 → `cagr_pct = None` (no ZeroDivisionError)
-
-- [ ] **compute_cash_flow_quality**
-  - 0 consecutive gaps → `auto_reject = False`
-  - 1 consecutive gap → `auto_reject = False`
-  - 2 consecutive gaps → `auto_reject = True` (threshold hit)
-  - 3 consecutive gaps → `auto_reject = True`
-  - Gap broken mid-sequence → only leading run counts, no false positive
-
-- [ ] **compute_receivables_growth**
-  - No flagged years when receivables grow slower than revenue
-  - `bad_years` increments correctly when receivables grow > 1.5× revenue
-  - Fewer than 3 data points → `bad_years = 0`, no crash
-
-- [ ] **compute_debt_growth**
-  - 0, 1, 2 consecutive years → `auto_reject = False`
-  - 3 consecutive years → `auto_reject = True` (threshold hit)
-  - Fewer than 4 data points → returns safe defaults, no crash
-  - `year_flags` list length matches available year-pairs
-
----
-
-### Milestone 3 — Unit Tests: Layer 2 (Key Figures) ✅
-File: `tests/unit/test_key_figures.py` — 33 tests, all passing.
-
-- [ ] Full valid statements → all 15+ keys present with correct Python types
-      (`revenues` is `list[float]`, `current_price` is `float | None`, etc.)
-- [ ] `interestExpense` missing from income statement rows → `interest_expenses`
-      is an empty list, no KeyError
-- [ ] `totalStockholdersEquity` absent but `totalEquity` present → equity fallback works
-- [ ] Empty income statements list → `revenues`, `net_incomes`, etc. are all `[]`
-- [ ] `freeCashFlowYield` present for 5 years → `fcf_yield` is 3-year average of newest 3
-- [ ] `freeCashFlowYield` present for only 1 year → `fcf_yield` averages what's available
-- [ ] All `freeCashFlowYield` values are negative → `fcf_yield` is `None`
-- [ ] No `key_metrics` rows → `peg_ratio`, `graham_number`, `fcf_yield` all `None`
-
----
-
-### Milestone 4 — Integration Tests: Layer 1 (FMP Client) ✅
-File: `tests/integration/test_fmp.py` — 14 tests, all passing.
-Uses `responses` library to intercept HTTP calls.
-
-- [ ] `fetch_income_statement("AAPL")` with mocked 200 response → returns `list[dict]`
-      with expected keys (`revenue`, `netIncome`, `operatingIncome`)
-- [ ] `fetch_balance_sheet("AAPL")` → returns list with `totalDebt`, `totalAssets`, etc.
-- [ ] `fetch_cash_flow("AAPL")` → returns list with `operatingCashFlow`, `freeCashFlow`
-- [ ] `fetch_key_metrics("AAPL")` → returns list with `pegRatio`, `grahamNumber`,
-      `freeCashFlowYield`
-- [ ] `fetch_earnings_history("AAPL")` → returns list with `eps`, `date`
-- [ ] FMP error payload `{"Error Message": "Invalid API KEY"}` → raises `ValueError`
-- [ ] HTTP 404 response → raises `requests.HTTPError`
-- [ ] `FMP_API_KEY` not set in environment → raises `EnvironmentError` before any HTTP call
-
----
-
-### Milestone 5 — Integration Tests: Layer 4 (Agents)
-File: `tests/integration/test_agents.py`
-Uses `pytest-mock` to patch `anthropic.Anthropic().messages.create`.
-
-- [ ] **Schema compliance — all three agents**
-  For each of `quality_agent`, `value_agent`, `bear_case_agent`:
-  - Mock Anthropic SDK to return a `submit_analysis` tool call with valid payload
-  - Verify output dict has all 7 required keys:
-    `agent`, `ticker`, `signal`, `score`, `summary`, `flags`, `timestamp`
-  - `signal` is one of `"bullish"`, `"neutral"`, `"bearish"`
-  - `score` is a `float` between `0.0` and `10.0`
-  - `flags` is a `list`
-  - `timestamp` is a non-empty string (ISO format)
-  - `agent` matches the expected agent name string
-
-- [ ] **Fallback path** (applies to all agents via `llm_agent.run_agent`)
-  - Mock SDK to return `stop_reason = "end_turn"` without a `submit_analysis` call
-  - Verify output still matches schema (no KeyError / crash)
-  - Verify `flags` list contains `"Agent loop ended without submit_analysis"`
-  - Verify `score` defaults to `5.0` and `signal` defaults to `"neutral"`
+- All 8 required keys present in output: `agent`, `ticker`, `signal`, `score`, `summary`, `details`, `flags`, `timestamp`
+- `signal` is one of `bullish / neutral / bearish`
+- `score` is a `float` in `[0.0, 10.0]`
+- `flags` is a `list`; populated flags are passed through correctly
+- `agent` field matches the module name; `ticker` matches the input
+- `timestamp` is a non-empty string
+- All schema assertions run against all 3 agents via `@pytest.mark.parametrize`
+- Fallback path (`end_turn` without `submit_analysis`): schema still valid, `signal = "neutral"`, `score = 5.0`, diagnostic flag present
 
 ---
 

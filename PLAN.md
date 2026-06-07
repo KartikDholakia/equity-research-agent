@@ -94,12 +94,7 @@ actually act on.
 - [x] Fix DCF input: replaced single-year freeCashFlowYield with 3-year average
       in tools/key_figures.py. Prevents heavily-investing companies (AMZN, NVDA)
       from producing absurdly low fair values due to one bad FCF year.
-- [ ] Testing framework — see TEST_PLAN.md for full spec and milestone breakdown
-      - [x] Milestone 1: Framework boilerplate (pytest.ini, conftest.py, fixture JSON files)
-      - [x] Milestone 2: Unit tests — Layer 3 metrics (tests/unit/test_metrics.py)
-      - [x] Milestone 3: Unit tests — Layer 2 key figures (tests/unit/test_key_figures.py)
-      - [x] Milestone 4: Integration tests — FMP client (tests/integration/test_fmp.py)
-      - [ ] Milestone 5: Integration tests — agents schema (tests/integration/test_agents.py)
+- [x] Write tests — 154 tests across 4 files, all passing. See TEST_PLAN.md for coverage detail.
 
 ---
 
