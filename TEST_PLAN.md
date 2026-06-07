@@ -188,8 +188,8 @@ File: `tests/unit/test_key_figures.py` — 33 tests, all passing.
 
 ---
 
-### Milestone 4 — Integration Tests: Layer 1 (FMP Client)
-File: `tests/integration/test_fmp.py`
+### Milestone 4 — Integration Tests: Layer 1 (FMP Client) ✅
+File: `tests/integration/test_fmp.py` — 14 tests, all passing.
 Uses `responses` library to intercept HTTP calls.
 
 - [ ] `fetch_income_statement("AAPL")` with mocked 200 response → returns `list[dict]`
