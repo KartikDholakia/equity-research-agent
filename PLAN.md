@@ -97,7 +97,7 @@ actually act on.
 - [ ] Testing framework — see TEST_PLAN.md for full spec and milestone breakdown
       - [x] Milestone 1: Framework boilerplate (pytest.ini, conftest.py, fixture JSON files)
       - [x] Milestone 2: Unit tests — Layer 3 metrics (tests/unit/test_metrics.py)
-      - [ ] Milestone 3: Unit tests — Layer 2 key figures (tests/unit/test_key_figures.py)
+      - [x] Milestone 3: Unit tests — Layer 2 key figures (tests/unit/test_key_figures.py)
       - [ ] Milestone 4: Integration tests — FMP client (tests/integration/test_fmp.py)
       - [ ] Milestone 5: Integration tests — agents schema (tests/integration/test_agents.py)
 

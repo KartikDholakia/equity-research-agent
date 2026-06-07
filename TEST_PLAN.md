@@ -172,8 +172,8 @@ Goal: Every `compute_*` function in `tools/metrics.py` is covered. 76 tests, all
 
 ---
 
-### Milestone 3 — Unit Tests: Layer 2 (Key Figures)
-File: `tests/unit/test_key_figures.py`
+### Milestone 3 — Unit Tests: Layer 2 (Key Figures) ✅
+File: `tests/unit/test_key_figures.py` — 33 tests, all passing.
 
 - [ ] Full valid statements → all 15+ keys present with correct Python types
       (`revenues` is `list[float]`, `current_price` is `float | None`, etc.)
