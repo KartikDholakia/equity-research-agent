@@ -90,9 +90,9 @@ Goal: `pytest` runs cleanly, discovers tests, markers work.
 
 ---
 
-### Milestone 2 — Unit Tests: Layer 3 (Metrics)
+### Milestone 2 — Unit Tests: Layer 3 (Metrics) ✅
 File: `tests/unit/test_metrics.py`
-Goal: Every `compute_*` function in `tools/metrics.py` is covered.
+Goal: Every `compute_*` function in `tools/metrics.py` is covered. 76 tests, all passing.
 
 - [ ] **compute_roe_trend**
   - ROE values computed correctly across 5 years
