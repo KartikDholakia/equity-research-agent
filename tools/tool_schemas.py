@@ -82,7 +82,7 @@ COMPUTATION_TOOLS: list[dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "fcf_yield":     {"type": ["number", "null"], "description": "Free cash flow yield (freeCashFlowYield from FMP)"},
+                "fcf_yield":     {"type": ["number", "null"], "description": "3-year average FCF yield (FCF / market cap). Already normalized — use directly."},
                 "current_price": {"type": ["number", "null"], "description": "Current stock price"},
             },
             "required": ["fcf_yield", "current_price"],

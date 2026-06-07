@@ -45,10 +45,29 @@ def extract_key_figures(
         "fcfs":                _pull(cash_flows, "freeCashFlow"),
         "peg_ratio":           key_metrics[0].get("pegRatio") if key_metrics else None,
         "graham_number":       key_metrics[0].get("grahamNumber") if key_metrics else None,
-        "fcf_yield":           key_metrics[0].get("freeCashFlowYield") if key_metrics else None,
+        "fcf_yield":           _avg_fcf_yield(key_metrics, years=3),
         "earnings_yields":     [
             float(m["earningsYield"])
             for m in key_metrics
             if (m.get("earningsYield") or 0) > 0
         ],
     }
+
+
+def _avg_fcf_yield(key_metrics: list[dict[str, Any]], years: int = 3) -> float | None:
+    """3-year average FCF yield, including negative years.
+
+    Using a multi-year average avoids penalising companies that are temporarily
+    suppressing FCF through heavy growth capex (e.g. AMZN, NVDA). Negative years
+    are included because the capex was real. Returns None if the average is <= 0
+    (no DCF possible) or if no data is available.
+    """
+    yields = [
+        float(m["freeCashFlowYield"])
+        for m in key_metrics[:years]
+        if m.get("freeCashFlowYield") is not None
+    ]
+    if not yields:
+        return None
+    avg = sum(yields) / len(yields)
+    return round(avg, 6) if avg > 0 else None

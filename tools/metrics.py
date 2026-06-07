@@ -89,7 +89,7 @@ def compute_interest_coverage(
 # ── Valuation metrics ────────────────────────────────────────────────────────────
 
 def compute_dcf(fcf_yield: float | None, current_price: float | None) -> dict[str, Any]:
-    """3-scenario DCF. fcf_yield is freeCashFlowYield from FMP key metrics."""
+    """3-scenario DCF. fcf_yield is a 3-year average FCF yield (FCF / market cap)."""
     if not fcf_yield or not current_price or current_price <= 0 or fcf_yield <= 0:
         return {"bear": None, "base": None, "bull": None, "margin_of_safety_base_pct": None}
     fcf_ps = fcf_yield * current_price

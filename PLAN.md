@@ -91,6 +91,9 @@ actually act on.
         repeated runs of the same agent. See Anthropic prompt caching docs for
         the exact API shape.
       - See ARCHITECTURE.md for full design
+- [x] Fix DCF input: replaced single-year freeCashFlowYield with 3-year average
+      in tools/key_figures.py. Prevents heavily-investing companies (AMZN, NVDA)
+      from producing absurdly low fair values due to one bad FCF year.
 - [ ] Write tests/test_fmp.py and tests/test_agents.py (basic smoke tests)
 
 ---
