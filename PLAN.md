@@ -56,7 +56,7 @@ actually act on.
         review / allocate — only "analyze" ships in Phase 1, but routing
         logic must accommodate the rest without a rewrite
 - [x] Test on AAPL, NVDA, MSFT — verify output looks correct
-- [ ] Fix bugs found in architecture review (do before LLM refactor)
+- [x] Fix bugs found in architecture review (do before LLM refactor)
       - Add fetch_earnings_history(ticker, years=5) to data/fmp.py.
         Use the FMP stable endpoint "earnings" with params symbol=ticker, limit=years.
         Return list[dict] like the other fetch_* functions in that file.
@@ -69,7 +69,7 @@ actually act on.
         Remove the re-raise. Print the error message and call sys.exit(1) instead,
         so the CLI exits with a non-zero code without dumping a traceback.
         Import sys at the top of the file if not already present.
-- [ ] Refactor agents to LLM-backed (Claude tool use)
+- [x] Refactor agents to LLM-backed (Claude tool use)
       - Replace rule-based scoring in quality_agent, value_agent, bear_case_agent
       - Add key figures extractor (Layer 2) — ~15-20 clean numbers from raw statements
       - Move metric functions to tool pool — tools return numbers, Claude reasons
@@ -249,3 +249,4 @@ Candidates to build (confirm at Phase 5 retrospective):
 | 2026-05-24 | LangGraph deferred to Phase 5 — plain Anthropic SDK sufficient for Phase 1-4 parallel agent execution |
 | 2026-05-24 | Screener mode (Phase 3) uses two-speed system: Python pre-filter on 500 stocks, LLM only on shortlist of 20-30 — keeps cost under ₹20/run |
 | 2026-05-24 | Phase 1 refactor: current rule-based agents to be replaced with LLM agents (Python computes metrics, Claude reasons via persona prompts) |
+| 2026-05-28 | LLM refactor complete: tools/key_figures.py (Layer 2), tools/metrics.py + tool_schemas.py + llm_agent.py (Layer 3/loop), agents refactored to Claude tool use with Munger/Graham/Burry personas, prompt caching on system prompt block |
