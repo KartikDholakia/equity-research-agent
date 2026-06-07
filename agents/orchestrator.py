@@ -7,11 +7,12 @@ from typing import Any
 from agents import bear_case_agent, quality_agent, value_agent
 from data import fmp, yfinance_client
 from tools.formatters import format_verdict_card
+from tools.key_figures import extract_key_figures
 
 # Conviction weights — quality and value are equal, bear is a pass/fail modifier
 _W_QUALITY = 0.40
-_W_VALUE = 0.35
-_W_BEAR = 0.25
+_W_VALUE   = 0.35
+_W_BEAR    = 0.25
 
 
 def run_analysis(ticker: str, market: str = "us") -> None:
@@ -47,7 +48,7 @@ def run_allocate(amount: float) -> None:
 # ── Data fetching ────────────────────────────────────────────────────────────────
 
 def _fetch_data(ticker: str, market: str) -> dict[str, Any]:
-    """Fetch all required data sources in parallel via threads."""
+    """Fetch all required data sources in parallel, then extract key figures."""
     fns = {
         "income_statements": lambda: fmp.fetch_income_statement(ticker),
         "balance_sheets":    lambda: fmp.fetch_balance_sheet(ticker),
@@ -57,23 +58,28 @@ def _fetch_data(ticker: str, market: str) -> dict[str, Any]:
     }
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         futures = {key: pool.submit(fn) for key, fn in fns.items()}
-        return {key: fut.result() for key, fut in futures.items()}
+        raw = {key: fut.result() for key, fut in futures.items()}
+
+    raw["key_figures"] = extract_key_figures(
+        ticker,
+        raw["income_statements"],
+        raw["balance_sheets"],
+        raw["cash_flows"],
+        raw["key_metrics"],
+        raw["price_data"],
+    )
+    return raw
 
 
 # ── Agent execution ──────────────────────────────────────────────────────────────
 
 def _run_agents(ticker: str, data: dict[str, Any]) -> list[dict[str, Any]]:
     """Run the three Phase-1 agents in parallel and return their output dicts."""
+    key_figures = data["key_figures"]
     fns = [
-        lambda: quality_agent.analyze(
-            ticker, data["income_statements"], data["balance_sheets"], data["cash_flows"]
-        ),
-        lambda: value_agent.analyze(
-            ticker, data["key_metrics"], data["price_data"]
-        ),
-        lambda: bear_case_agent.analyze(
-            ticker, data["income_statements"], data["balance_sheets"], data["cash_flows"]
-        ),
+        lambda: quality_agent.analyze(ticker, key_figures),
+        lambda: value_agent.analyze(ticker, key_figures),
+        lambda: bear_case_agent.analyze(ticker, key_figures),
     ]
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
         return [f.result() for f in [pool.submit(fn) for fn in fns]]
@@ -105,7 +111,7 @@ def _synthesize(
     verdict = "AVOID" if auto_rejected else _verdict_label(conviction)
 
     current_price = float((data["price_data"].get("price")) or 0)
-    fair_value    = (value.get("details") or {}).get("fair_value_estimate")
+    fair_value    = _extract_fair_value(value)
     upside_pct    = (
         round((fair_value - current_price) / current_price * 100, 1)
         if fair_value and current_price else None
@@ -129,6 +135,18 @@ def _synthesize(
     }
 
 
+def _extract_fair_value(value: dict[str, Any]) -> float | None:
+    """Average DCF base-case and Graham number when both are available."""
+    details    = value.get("details") or {}
+    dcf        = details.get("compute_dcf") or {}
+    graham     = details.get("compute_graham") or {}
+    candidates = [
+        v for v in (dcf.get("base"), graham.get("graham_number"))
+        if v is not None and v > 0
+    ]
+    return round(sum(candidates) / len(candidates), 2) if candidates else None
+
+
 def _verdict_label(conviction: float) -> str:
     if conviction >= 6.5:
         return "BUY"
@@ -138,26 +156,24 @@ def _verdict_label(conviction: float) -> str:
 
 
 def _bull_reasons(quality: dict, value: dict, bear: dict) -> list[str]:
+    """Extract up to 3 individual positive bullets from non-bearish agent summaries."""
     reasons: list[str] = []
-
-    avg_roe = (quality.get("details") or {}).get("roe", {}).get("avg_pct")
-    if avg_roe and avg_roe >= 15:
-        reasons.append(f"Strong ROE averaging {avg_roe:.1f}% — above the 15% quality threshold")
-
-    fv = (value.get("details") or {}).get("fair_value_estimate")
-    cp = (value.get("details") or {}).get("current_price")
-    if fv and cp and fv > cp:
-        reasons.append(
-            f"Trading at ~{round((fv - cp) / cp * 100):.0f}% discount to estimated intrinsic value (${fv:,.2f})"
-        )
-
-    if bear.get("signal") != "bearish":
-        reasons.append("Clean financials — no auto-reject red flags triggered in quantitative checks")
-
-    if not reasons:
-        reasons.append("Insufficient data for a quantitative bull thesis — qualitative review required")
-
-    return reasons[:3]
+    for agent in (quality, value, bear):
+        if agent.get("signal") == "bearish":
+            continue
+        summary = (agent.get("summary") or "").strip()
+        if not summary:
+            continue
+        bullets = [p.strip() for p in summary.split("•") if p.strip()]
+        for b in bullets:
+            if len(reasons) >= 3:
+                break
+            # Skip bullets that are primarily about risks/overvaluation
+            lower = b.lower()
+            if any(w in lower for w in ("overval", "risk", "concern", "flag", "stretched", "premium")):
+                continue
+            reasons.append(b)
+    return reasons[:3] if reasons else ["No quantitative bull case identified — manual review required"]
 
 
 def _what_changes_mind(verdict: str) -> dict[str, str]:
