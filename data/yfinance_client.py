@@ -1,4 +1,4 @@
-"""yfinance client — EOD prices and technical indicators for US and Indian stocks."""
+"""yfinance client — EOD prices, technical indicators, and Indian fundamentals."""
 from typing import Any
 
 import pandas as pd
@@ -77,6 +77,39 @@ def fetch_technical_indicators(ticker: str) -> dict[str, Any]:
         **macd,
         **dma,
         **volume,
+    }
+
+
+def fetch_fundamentals_yfinance(ticker: str) -> dict[str, Any]:
+    """Fetch annual financial statements for any ticker supported by yfinance.
+
+    Works for Indian (.NS / .BO), US, and other globally listed tickers.
+    Returns DataFrames where columns = fiscal years (newest first) and rows = metrics.
+    Raises ValueError if all DataFrames are empty (invalid or unsupported ticker).
+    The info dict is returned as-is from yfinance — never raises, returns {} on failure.
+    """
+    t = yf.Ticker(ticker)
+
+    income_stmt   = t.financials
+    balance_sheet = t.balance_sheet
+    cashflow      = t.cashflow
+
+    if income_stmt.empty and balance_sheet.empty and cashflow.empty:
+        raise ValueError(
+            f"No fundamental data found for '{ticker}'. "
+            "Verify the ticker includes the correct suffix (.NS for NSE, .BO for BSE)."
+        )
+
+    try:
+        info = t.info or {}
+    except Exception:
+        info = {}
+
+    return {
+        "income_stmt":   income_stmt,
+        "balance_sheet": balance_sheet,
+        "cashflow":      cashflow,
+        "info":          info,
     }
 
 
