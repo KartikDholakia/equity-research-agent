@@ -32,7 +32,7 @@ After computing the metrics you need, call submit_analysis with:
 - summary: exactly 2 bullet points starting with "• ": first bullet is the fair value estimate with upside/downside %, second bullet is the single most important valuation signal. Each bullet is one concise sentence with specific numbers. No prose paragraphs.
 - flags: specific valuation red flags (overvaluation, negative FCF for DCF, missing data)
 
-Be direct and specific. Reference actual dollar values and percentages from your tool outputs.
+Be direct and specific. Use the correct currency symbol: ₹ for Indian tickers ending in .NS or .BO, $ for all other tickers. Reference actual values and percentages from your tool outputs.
 """
 
 
