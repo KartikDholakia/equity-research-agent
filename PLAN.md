@@ -102,31 +102,32 @@ actually act on.
 Goal: Same CLI works for Indian stocks. `python main.py --ticker ZOMATO.NS`
 Exit criterion: verdict card on ZOMATO.NS / HDFCBANK.NS feels accurate.
 
-- [ ] Fix currency symbol hardcode in agents/value_agent.py.
-      The _summary function (lines 189-196) builds strings like
-      "Fair value est. $X.XX vs current $Y.YY" regardless of market.
-      For Indian tickers ending in .NS or .BO the symbol should be ₹ not $.
-      Add a ticker: str parameter to _summary and to analyze (it already receives
-      ticker). Inside _summary, derive currency = "₹" if ticker ends with
-      ".NS" or ".BO" else "$", then use that variable in the f-string.
-- [ ] Extend data/yfinance_client.py for NSE/BSE tickers (.NS / .BO suffix)
-      - fetch_fundamentals_india(ticker) — income stmt, balance sheet, CF
-      - yfinance covers basic financials; use as primary Indian data source
-- [ ] Build data/screener.py (Screener.in scraper — India-specific data only)
+- [x] Fix currency symbol hardcode in agents/value_agent.py.
+      System prompt updated: Claude uses ₹ for .NS/.BO tickers, $ for US.
+- [x] Extend data/yfinance_client.py for NSE/BSE tickers (.NS / .BO suffix)
+      - fetch_fundamentals_yfinance(ticker) — income stmt, balance sheet, CF, info
+      - Raises ValueError if all DataFrames empty; info returns {} on failure
+      - Tested: 7 unit tests, all passing
+- [x] Build data/screener.py (Screener.in scraper — India-specific data only)
       - fetch_promoter_holding(ticker) — promoter % and pledging %
-      - fetch_fii_dii_trends(ticker) — institutional holding changes
-      - Add rate limiting / polite delays (personal use = low request volume)
-      - Map fields to same schema as FMP output
-- [ ] Add India-specific checks to quality_agent.py
-      - Promoter holding %
-      - Promoter pledging %
-      - FII/DII holding trends
-- [ ] Build agents/growth_agent.py
-      - Revenue CAGR, EPS CAGR, TAM sizing, forward estimates
+      - fetch_fii_dii_trends(ticker) — FII/DII %, trend direction (rising/falling/stable)
+      - 2-second rate-limit delay per request; graceful degradation on all failures
+      - Tested: 18 unit tests (slug, trend, holding, FII), all passing
+- [ ] Add India key figures extractor to tools/key_figures.py
+      - extract_india_key_figures() — yfinance DataFrame format with India-specific fields
+- [ ] Add 3 new metric functions to tools/metrics.py
+      - compute_eps_cagr, compute_promoter_analysis, compute_fii_trend
+- [ ] Add 3 new tool schemas to tools/tool_schemas.py
+- [ ] Build agents/growth_agent.py (Peter Lynch / Phil Fisher persona)
+      - Revenue CAGR, EPS CAGR, PEG, forward PE
       - Output: agent signal dict
-- [ ] Wire growth_agent into orchestrator (now 4 agents)
-- [ ] Add Indian tax awareness to orchestrator (LTCG/STCG flags)
-- [ ] Test on ZOMATO.NS, INFY.NS, HDFCBANK.NS
+- [ ] Add India-specific checks to quality_agent.py
+      - compute_promoter_analysis and compute_fii_trend in tool pool
+      - Extended system prompt for India checks
+- [ ] Wire growth_agent into orchestrator (now 4 agents); market-aware fetch;
+      updated conviction weights; India tax note in verdict dict
+- [ ] Add India tax banner to tools/formatters.py
+- [ ] Test on ZOMATO.NS, INFY.NS, HDFCBANK.NS; regression check on AAPL
 
 ---
 

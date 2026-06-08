@@ -45,3 +45,6 @@ logs/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Rough Files
+ideas-self.md
