@@ -4,7 +4,10 @@
       "WebSearch",
       "WebFetch(domain:indianapi.in)",
       "WebFetch(domain:eodhd.com)",
-      "WebFetch(domain:finnhub.io)"
+      "WebFetch(domain:finnhub.io)",
+      "Bash(python -m pytest tests/unit/test_india_key_figures.py tests/unit/test_growth_metrics.py -v)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

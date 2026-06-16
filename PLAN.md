@@ -113,20 +113,21 @@ Exit criterion: verdict card on ZOMATO.NS / HDFCBANK.NS feels accurate.
       - fetch_fii_dii_trends(ticker) — FII/DII %, trend direction (rising/falling/stable)
       - 2-second rate-limit delay per request; graceful degradation on all failures
       - Tested: 18 unit tests (slug, trend, holding, FII), all passing
-- [ ] Add India key figures extractor to tools/key_figures.py
+- [x] Add India key figures extractor to tools/key_figures.py
       - extract_india_key_figures() — yfinance DataFrame format with India-specific fields
-- [ ] Add 3 new metric functions to tools/metrics.py
+- [x] Add 3 new metric functions to tools/metrics.py
       - compute_eps_cagr, compute_promoter_analysis, compute_fii_trend
-- [ ] Add 3 new tool schemas to tools/tool_schemas.py
-- [ ] Build agents/growth_agent.py (Peter Lynch / Phil Fisher persona)
+- [x] Add 3 new tool schemas to tools/tool_schemas.py
+- [x] Build agents/growth_agent.py (Peter Lynch / Phil Fisher persona)
       - Revenue CAGR, EPS CAGR, PEG, forward PE
       - Output: agent signal dict
-- [ ] Add India-specific checks to quality_agent.py
+- [x] Add India-specific checks to quality_agent.py
       - compute_promoter_analysis and compute_fii_trend in tool pool
       - Extended system prompt for India checks
-- [ ] Wire growth_agent into orchestrator (now 4 agents); market-aware fetch;
+- [x] Wire growth_agent into orchestrator (now 4 agents); market-aware fetch;
       updated conviction weights; India tax note in verdict dict
-- [ ] Add India tax banner to tools/formatters.py
+- [x] Add India tax banner to tools/formatters.py
+- [x] Write tests — 32 new tests across 2 files (test_india_key_figures, test_growth_metrics), all 211 passing
 - [ ] Test on ZOMATO.NS, INFY.NS, HDFCBANK.NS; regression check on AAPL
 
 ---
@@ -254,3 +255,4 @@ Candidates to build (confirm at Phase 5 retrospective):
 | 2026-05-24 | Screener mode (Phase 3) uses two-speed system: Python pre-filter on 500 stocks, LLM only on shortlist of 20-30 — keeps cost under ₹20/run |
 | 2026-05-24 | Phase 1 refactor: current rule-based agents to be replaced with LLM agents (Python computes metrics, Claude reasons via persona prompts) |
 | 2026-05-28 | LLM refactor complete: tools/key_figures.py (Layer 2), tools/metrics.py + tool_schemas.py + llm_agent.py (Layer 3/loop), agents refactored to Claude tool use with Munger/Graham/Burry personas, prompt caching on system prompt block |
+| 2026-06-08 | Phase 2 Steps 4–11 complete: India key figures extractor, 3 new metrics (eps_cagr, promoter_analysis, fii_trend), 3 new tool schemas, growth_agent (Lynch/Fisher persona), quality_agent India extension, orchestrator market-aware routing (4 agents, new weights), India tax banner. 211 tests passing. |

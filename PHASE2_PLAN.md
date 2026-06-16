@@ -135,10 +135,10 @@ Add Anthropic tool definition dicts for `compute_eps_cagr`, `compute_promoter_an
 | `agents/value_agent.py` | Modify — currency symbol fix | ✅ Done |
 | `data/yfinance_client.py` | Modify — add `fetch_fundamentals_yfinance()` | ✅ (tested) |
 | `data/screener.py` | New — Screener.in scraper | ✅ (tested) |
-| `tools/key_figures.py` | Modify — add `extract_india_key_figures()` | ⬜ |
-| `tools/metrics.py` | Modify — add 3 new metric functions | ⬜ |
-| `tools/tool_schemas.py` | Modify — add 3 new tool schemas | ⬜ |
-| `agents/growth_agent.py` | New — Peter Lynch / Phil Fisher growth agent | ⬜ |
-| `agents/quality_agent.py` | Modify — extend for India checks | ⬜ |
-| `agents/orchestrator.py` | Modify — market-aware fetch, 4 agents, new weights | ⬜ |
-| `tools/formatters.py` | Modify — India tax banner | ⬜ |
+| `tools/key_figures.py` | Modify — add `extract_india_key_figures()` | ✅ (tested) |
+| `tools/metrics.py` | Modify — add 3 new metric functions | ✅ (tested) |
+| `tools/tool_schemas.py` | Modify — add 3 new tool schemas | ✅ |
+| `agents/growth_agent.py` | New — Peter Lynch / Phil Fisher growth agent | ✅ |
+| `agents/quality_agent.py` | Modify — extend for India checks | ✅ |
+| `agents/orchestrator.py` | Modify — market-aware fetch, 4 agents, new weights | ✅ |
+| `tools/formatters.py` | Modify — India tax banner | ✅ |
