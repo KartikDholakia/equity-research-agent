@@ -128,7 +128,7 @@ Exit criterion: verdict card on ZOMATO.NS / HDFCBANK.NS feels accurate.
       updated conviction weights; India tax note in verdict dict
 - [x] Add India tax banner to tools/formatters.py
 - [x] Write tests — 32 new tests across 2 files (test_india_key_figures, test_growth_metrics), all 211 passing
-- [ ] Test on ZOMATO.NS, INFY.NS, HDFCBANK.NS; regression check on AAPL
+- [x] Test on ZOMATO.NS, INFY.NS, HDFCBANK.NS; regression check on AAPL
 
 ---
 
