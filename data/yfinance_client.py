@@ -1,4 +1,5 @@
 """yfinance client — EOD prices, technical indicators, and Indian fundamentals."""
+import concurrent.futures
 from typing import Any
 
 import pandas as pd
@@ -90,20 +91,27 @@ def fetch_fundamentals_yfinance(ticker: str) -> dict[str, Any]:
     """
     t = yf.Ticker(ticker)
 
-    income_stmt   = t.financials
-    balance_sheet = t.balance_sheet
-    cashflow      = t.cashflow
+    def _get_info() -> dict[str, Any]:
+        try:
+            return t.info or {}
+        except Exception:
+            return {}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        f_income   = pool.submit(lambda: t.financials)
+        f_balance  = pool.submit(lambda: t.balance_sheet)
+        f_cashflow = pool.submit(lambda: t.cashflow)
+        f_info     = pool.submit(_get_info)
+        income_stmt   = f_income.result()
+        balance_sheet = f_balance.result()
+        cashflow      = f_cashflow.result()
+        info          = f_info.result()
 
     if income_stmt.empty and balance_sheet.empty and cashflow.empty:
         raise ValueError(
             f"No fundamental data found for '{ticker}'. "
             "Verify the ticker includes the correct suffix (.NS for NSE, .BO for BSE)."
         )
-
-    try:
-        info = t.info or {}
-    except Exception:
-        info = {}
 
     return {
         "income_stmt":   income_stmt,
@@ -149,7 +157,7 @@ def _rsi_label(rsi: float) -> str:
     return "neutral"
 
 
-def _macd(close: pd.Series) -> dict[str, float]:
+def _macd(close: pd.Series) -> dict[str, float | str]:
     """Standard MACD (12, 26, 9)."""
     ema12 = close.ewm(span=12, adjust=False).mean()
     ema26 = close.ewm(span=26, adjust=False).mean()
