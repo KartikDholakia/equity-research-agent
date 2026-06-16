@@ -1,9 +1,5 @@
 """Bear case agent — screens for auto-reject red flags via Claude (Burry persona)."""
-from typing import Any
-
-from tools.llm_agent import run_agent
-from tools.metrics import TOOL_DISPATCH
-from tools.tool_schemas import ALL_TOOLS
+from agents.base import AgentStrategy
 
 _SYSTEM_PROMPT = """\
 You are a forensic financial analyst in the tradition of Michael Burry. Your job is to find \
@@ -42,14 +38,4 @@ After computing the metrics you need, call submit_analysis with:
 Do not invent red flags. If the quantitative data is clean, say so plainly.
 """
 
-
-def analyze(ticker: str, key_figures: dict[str, Any]) -> dict[str, Any]:
-    """Run bear-case analysis via LLM and return the standard agent output dict."""
-    return run_agent(
-        ticker=ticker,
-        key_figures=key_figures,
-        system_prompt=_SYSTEM_PROMPT,
-        tools=ALL_TOOLS,
-        tool_dispatch=TOOL_DISPATCH,
-        agent_name="bear_case_agent",
-    )
+analyze = AgentStrategy(name="bear_case_agent", system_prompt=_SYSTEM_PROMPT).analyze

@@ -1,9 +1,5 @@
 """Value agent — estimates intrinsic value via Claude (Graham/Pabrai persona)."""
-from typing import Any
-
-from tools.llm_agent import run_agent
-from tools.metrics import TOOL_DISPATCH
-from tools.tool_schemas import ALL_TOOLS
+from agents.base import AgentStrategy
 
 _SYSTEM_PROMPT = """\
 You are a value-focused equity analyst with the combined perspective of Benjamin Graham \
@@ -35,14 +31,4 @@ After computing the metrics you need, call submit_analysis with:
 Be direct and specific. Use the correct currency symbol: ₹ for Indian tickers ending in .NS or .BO, $ for all other tickers. Reference actual values and percentages from your tool outputs.
 """
 
-
-def analyze(ticker: str, key_figures: dict[str, Any]) -> dict[str, Any]:
-    """Run valuation analysis via LLM and return the standard agent output dict."""
-    return run_agent(
-        ticker=ticker,
-        key_figures=key_figures,
-        system_prompt=_SYSTEM_PROMPT,
-        tools=ALL_TOOLS,
-        tool_dispatch=TOOL_DISPATCH,
-        agent_name="value_agent",
-    )
+analyze = AgentStrategy(name="value_agent", system_prompt=_SYSTEM_PROMPT).analyze
