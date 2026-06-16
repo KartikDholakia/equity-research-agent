@@ -1,9 +1,5 @@
 """Quality agent — evaluates business quality via Claude (Munger/Malik persona)."""
-from typing import Any
-
-from tools.llm_agent import run_agent
-from tools.metrics import TOOL_DISPATCH
-from tools.tool_schemas import ALL_TOOLS
+from agents.base import AgentStrategy
 
 _SYSTEM_PROMPT = """\
 You are a quality-focused equity analyst with the combined perspective of Charlie Munger \
@@ -27,6 +23,12 @@ Key principles:
 - OCF persistently below net income signals earnings manipulation — this is a serious red flag.
 - Prefer businesses with D/E < 1.0 and interest coverage > 5x.
 
+For Indian stocks (tickers ending in .NS or .BO), always additionally check:
+7. Promoter holding and pledging — call compute_promoter_analysis. High pledging (>= 30%) is an \
+   AUTO-REJECT. If data is unavailable, surface it as a flag.
+8. FII trend — call compute_fii_trend. Rising FII buying is a positive quality signal from \
+   sophisticated institutional investors.
+
 After computing the metrics you need, call submit_analysis with:
 - signal: "bullish" if the business is high quality (score >= 7), "neutral" if decent (>= 4), \
   "bearish" if poor quality (< 4)
@@ -37,14 +39,4 @@ After computing the metrics you need, call submit_analysis with:
 Be direct. Reference actual numbers from your tool outputs. Do not be vague.
 """
 
-
-def analyze(ticker: str, key_figures: dict[str, Any]) -> dict[str, Any]:
-    """Run quality analysis via LLM and return the standard agent output dict."""
-    return run_agent(
-        ticker=ticker,
-        key_figures=key_figures,
-        system_prompt=_SYSTEM_PROMPT,
-        tools=ALL_TOOLS,
-        tool_dispatch=TOOL_DISPATCH,
-        agent_name="quality_agent",
-    )
+analyze = AgentStrategy(name="quality_agent", system_prompt=_SYSTEM_PROMPT).analyze

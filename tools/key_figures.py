@@ -1,6 +1,8 @@
 """Layer 2 — extracts ~15-20 clean key figures from raw financial statements."""
 from typing import Any
 
+import pandas as pd
+
 
 def extract_key_figures(
     ticker: str,
@@ -52,6 +54,95 @@ def extract_key_figures(
             if (m.get("earningsYield") or 0) > 0
         ],
     }
+
+
+def extract_df_key_figures(
+    ticker: str,
+    income_stmt: pd.DataFrame,
+    balance_sheet: pd.DataFrame,
+    cashflow: pd.DataFrame,
+    promoter_data: dict[str, Any],
+    price_data: dict[str, Any],
+    info: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return a compact dict of ~20 numbers for LLM agent consumption from yfinance DataFrames.
+
+    Use this when financial data comes from yfinance (rows = metrics, cols = fiscal years).
+    Use extract_key_figures() instead when data comes from FMP (list of dicts per year).
+
+    All list fields are newest-first. Promoter/FII fields are included when available and
+    are passed through from promoter_data — pass an empty dict if not applicable.
+    info: the yfinance ticker.info dict (forwardPE, forwardEps, pegRatio, etc.); pass None
+    or omit when not available.
+    Rule: no raw DataFrames go into the LLM — only this clean dict.
+    """
+    _info = info or {}
+
+    def _row(df: pd.DataFrame, *names: str) -> list[float]:
+        for name in names:
+            if name in df.index:
+                return [float(v) for v in df.loc[name].values if not pd.isna(v)]
+        return []
+
+    revenues           = _row(income_stmt, "Total Revenue")
+    net_incomes        = _row(income_stmt, "Net Income")
+    operating_incomes  = _row(income_stmt, "Operating Income", "EBIT")
+    ocfs               = _row(cashflow,    "Operating Cash Flow")
+    fcfs               = _row(cashflow,    "Free Cash Flow")
+    total_assets       = _row(balance_sheet, "Total Assets")
+    current_liabilities = _row(balance_sheet, "Current Liabilities", "Total Current Liabilities")
+    total_debts        = _row(balance_sheet, "Total Debt", "Long Term Debt")
+    equities           = _row(balance_sheet, "Common Stock Equity", "Stockholders Equity", "Total Equity Gross Minority Interest")
+    interest_expenses  = [abs(v) for v in _row(income_stmt, "Interest Expense") if v != 0]
+    net_receivables    = _row(balance_sheet, "Accounts Receivable", "Net Receivables")
+
+    market_cap = price_data.get("market_cap") or 0
+    fcf_yield  = _avg_df_fcf_yield(fcfs, market_cap)
+
+    forward_pe  = _info.get("forwardPE")
+    forward_eps = _info.get("forwardEps")
+    peg_ratio   = _info.get("pegRatio")
+
+    promoter_pct   = promoter_data.get("promoter_pct")
+    pledging_pct   = promoter_data.get("pledging_pct")
+    fii_trend      = promoter_data.get("fii_trend")
+    fii_pct        = promoter_data.get("fii_pct")
+
+    return {
+        "ticker":                   ticker,
+        "current_price":            float(price_data.get("price") or 0) or None,
+        "revenues":                 revenues,
+        "net_incomes":              net_incomes,
+        "operating_incomes":        operating_incomes,
+        "interest_expenses":        interest_expenses,
+        "equities":                 equities,
+        "total_assets":             total_assets,
+        "current_liabilities":      current_liabilities,
+        "total_debts":              total_debts,
+        "net_receivables":          net_receivables,
+        "ocfs":                     ocfs,
+        "fcfs":                     fcfs,
+        "fcf_yield":                fcf_yield,
+        "peg_ratio":                peg_ratio,
+        "forward_pe":               forward_pe,
+        "forward_eps":              forward_eps,
+        "promoter_pct":             promoter_pct,
+        "pledging_pct":             pledging_pct,
+        "fii_trend":                fii_trend,
+        "fii_pct":                  fii_pct,
+        "promoter_data_available":  promoter_pct is not None,
+    }
+
+
+def _avg_df_fcf_yield(fcfs: list[float], market_cap: float, years: int = 3) -> float | None:
+    """3-year average FCF / market_cap yield derived from yfinance DataFrames."""
+    if not fcfs or not market_cap or market_cap <= 0:
+        return None
+    yields = [fcf / market_cap for fcf in fcfs[:years]]
+    if not yields:
+        return None
+    avg = sum(yields) / len(yields)
+    return round(avg, 6) if avg > 0 else None
 
 
 def _avg_fcf_yield(key_metrics: list[dict[str, Any]], years: int = 3) -> float | None:

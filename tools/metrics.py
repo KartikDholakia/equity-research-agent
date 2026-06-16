@@ -163,6 +163,59 @@ def compute_revenue_cagr(revenues: list[float]) -> dict[str, Any]:
     return {"cagr_pct": cagr, "years": n}
 
 
+# ── Growth metrics ──────────────────────────────────────────────────────────────
+
+def compute_eps_cagr(eps_history: list[float]) -> dict[str, Any]:
+    """EPS CAGR over available years (newest first), plus growth consistency check."""
+    if len(eps_history) < 2:
+        return {"cagr_pct": None, "years": len(eps_history), "positive_growth_years": 0, "lumpy_growth": False}
+    oldest, newest = eps_history[-1], eps_history[0]
+    n = len(eps_history) - 1
+    pos_growth = sum(
+        1 for i in range(n) if eps_history[i] > eps_history[i + 1]
+    )
+    if oldest <= 0 or newest <= 0:
+        return {"cagr_pct": None, "years": n, "positive_growth_years": pos_growth, "lumpy_growth": pos_growth < n * 0.6}
+    cagr = round(((newest / oldest) ** (1 / n) - 1) * 100, 2)
+    lumpy = pos_growth < n * 0.6
+    return {"cagr_pct": cagr, "years": n, "positive_growth_years": pos_growth, "lumpy_growth": lumpy}
+
+
+def compute_promoter_analysis(
+    promoter_pct: float | None,
+    pledging_pct: float | None,
+) -> dict[str, Any]:
+    """Evaluate promoter holding and pledging. Returns auto-reject flag if pledging >= 30%."""
+    if promoter_pct is None or pledging_pct is None:
+        return {
+            "available": False,
+            "flag": "PROMOTER DATA UNAVAILABLE — verify pledging % manually before investing",
+        }
+    result: dict[str, Any] = {
+        "available":     True,
+        "promoter_pct":  promoter_pct,
+        "pledging_pct":  pledging_pct,
+        "flag":          None,
+    }
+    if pledging_pct >= 30:
+        result["flag"] = f"AUTO-REJECT: Promoter pledging {pledging_pct}% exceeds 30% threshold"
+    return result
+
+
+def compute_fii_trend(
+    fii_trend: str | None,
+    fii_pct: float | None,
+) -> dict[str, Any]:
+    """Interpret FII holding trend. Returns trend, signal, and a short note."""
+    if fii_trend is None:
+        return {"trend": "unknown", "signal": "neutral", "note": "FII trend data unavailable"}
+    signal_map = {"rising": "bullish", "falling": "bearish", "stable": "neutral"}
+    signal = signal_map.get(fii_trend, "neutral")
+    pct_str = f" ({fii_pct:.1f}%)" if fii_pct is not None else ""
+    note = f"FII holding{pct_str} is {fii_trend}"
+    return {"trend": fii_trend, "signal": signal, "note": note}
+
+
 # ── Bear-case metrics ────────────────────────────────────────────────────────────
 
 def compute_cash_flow_quality(ocfs: list[float], net_incomes: list[float]) -> dict[str, Any]:
@@ -251,4 +304,7 @@ TOOL_DISPATCH: dict[str, Any] = {
     "compute_cash_flow_quality": compute_cash_flow_quality,
     "compute_receivables_growth": compute_receivables_growth,
     "compute_debt_growth":       compute_debt_growth,
+    "compute_eps_cagr":           compute_eps_cagr,
+    "compute_promoter_analysis":  compute_promoter_analysis,
+    "compute_fii_trend":          compute_fii_trend,
 }

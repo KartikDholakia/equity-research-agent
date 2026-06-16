@@ -169,6 +169,41 @@ COMPUTATION_TOOLS: list[dict[str, Any]] = [
             "required": ["total_debts", "revenues"],
         },
     },
+    {
+        "name": "compute_eps_cagr",
+        "description": "EPS compound annual growth rate over available history. Also returns positive_growth_years and lumpy_growth flag.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "eps_history": {**_FLOAT_LIST, "description": "EPS each year, newest first"},
+            },
+            "required": ["eps_history"],
+        },
+    },
+    {
+        "name": "compute_promoter_analysis",
+        "description": "Evaluate promoter holding and pledging %. Returns auto-reject flag if pledging >= 30%, or UNAVAILABLE flag if data missing.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "promoter_pct": {"type": ["number", "null"], "description": "Promoter holding percentage"},
+                "pledging_pct": {"type": ["number", "null"], "description": "Pledged shares as % of promoter holding"},
+            },
+            "required": ["promoter_pct", "pledging_pct"],
+        },
+    },
+    {
+        "name": "compute_fii_trend",
+        "description": "Interpret FII holding trend. Returns trend (rising/falling/stable), signal (bullish/bearish/neutral), and a short note.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "fii_trend": {"type": ["string", "null"], "description": "FII trend direction: 'rising', 'falling', or 'stable'"},
+                "fii_pct":   {"type": ["number", "null"], "description": "Latest FII holding percentage"},
+            },
+            "required": ["fii_trend", "fii_pct"],
+        },
+    },
 ]
 
 SUBMIT_TOOL: dict[str, Any] = {
