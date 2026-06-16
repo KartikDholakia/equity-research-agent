@@ -19,12 +19,16 @@ _ACTIONS: dict[str, str] = {
     "WATCH": "Monitor for a better entry price or improved fundamentals.",
     "AVOID": "Stay on the sidelines until red flags are resolved.",
 }
+_INDIA_TAX_NOTE = (
+    "LTCG >₹1 lakh taxed at 12.5% (equity held >1 year). "
+    "STCG taxed at 20% (held ≤1 year). STT applies on all trades."
+)
 
 
 def format_verdict_card(verdict: dict[str, Any]) -> str:
     """Render a final verdict dict as a human-readable terminal card."""
     ticker   = verdict.get("ticker", "")
-    currency = "₹" if ticker.endswith((".NS", ".BO")) else "$"
+    currency = "₹" if ticker.upper().endswith((".NS", ".BO")) else "$"
     date_str = (verdict.get("generated_at") or "")[:10]
 
     lines: list[str] = [
@@ -48,6 +52,10 @@ def format_verdict_card(verdict: dict[str, Any]) -> str:
     pf = verdict.get("portfolio_fit", "")
     if pf:
         lines += ["", _DIV, f"🗂️  PORTFOLIO FIT", "", f"  {pf}"]
+
+    if ticker.upper().endswith((".NS", ".BO")):
+        lines += ["", _DIV, "💡  INDIA TAX NOTE", "",
+                  f"  {_INDIA_TAX_NOTE}"]
 
     lines += ["", _SEP, ""]
     return "\n".join(lines)
