@@ -91,18 +91,18 @@ def run_analyze(ticker: str, market: str) -> None:
 
 
 def run_screen(market: str) -> None:
-    """Surface top screener candidates. Available in Phase 3."""
-    print(f"[Phase 3] Screener for {market.upper()} market — not yet implemented.")
+    """Surface top screener candidates. Available in Phase 4."""
+    print(f"[Phase 4] Screener for {market.upper()} market — not yet implemented.")
 
 
 def run_review() -> None:
-    """Run a portfolio review across all holdings. Available in Phase 5."""
-    print("[Phase 5] Portfolio review — not yet implemented.")
+    """Run a portfolio review across all holdings. Available in Phase 6."""
+    print("[Phase 6] Portfolio review — not yet implemented.")
 
 
 def run_allocate(amount: float) -> None:
-    """Rank candidates and suggest ₹/$ allocation. Available in Phase 5."""
-    print(f"[Phase 5] Allocation query for {amount:,.0f} — not yet implemented.")
+    """Rank candidates and suggest ₹/$ allocation. Available in Phase 6."""
+    print(f"[Phase 6] Allocation query for {amount:,.0f} — not yet implemented.")
 
 
 def main() -> None:

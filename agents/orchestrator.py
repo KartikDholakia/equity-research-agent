@@ -32,18 +32,18 @@ def run_analysis(ticker: str, market: str = "us") -> None:
 # ── Routing stubs — wire up in later phases ─────────────────────────────────────
 
 def run_screen(market: str) -> None:
-    """Phase 3: run monthly screener for a market."""
-    raise NotImplementedError("Screener ships in Phase 3.")
+    """Phase 4: run monthly screener for a market."""
+    raise NotImplementedError("Screener ships in Phase 4.")
 
 
 def run_review() -> None:
-    """Phase 5: portfolio review across all holdings."""
-    raise NotImplementedError("Portfolio review ships in Phase 5.")
+    """Phase 6: portfolio review across all holdings."""
+    raise NotImplementedError("Portfolio review ships in Phase 6.")
 
 
 def run_allocate(amount: float) -> None:
-    """Phase 5: ranked candidates with suggested ₹/$ allocation."""
-    raise NotImplementedError("Allocation query ships in Phase 5.")
+    """Phase 6: ranked candidates with suggested ₹/$ allocation."""
+    raise NotImplementedError("Allocation query ships in Phase 6.")
 
 
 # ── Data fetching ────────────────────────────────────────────────────────────────
