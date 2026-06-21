@@ -36,8 +36,8 @@ tests/
 Future directories added per phase:
 - `tests/integration/test_screener.py` — Phase 2 (Screener.in scraper)
 - `tests/integration/test_yfinance.py` — Phase 2 (Indian market yfinance)
-- `tests/integration/test_orchestrator.py` — Phase 5 (LangGraph workflows)
-- `tests/e2e/` — Phase 4 (Streamlit UI)
+- `tests/integration/test_orchestrator.py` — Phase 6 (LangGraph workflows)
+- `tests/e2e/` — Phase 3 (Web UI — FastAPI + Jinja2)
 
 ---
 
@@ -150,6 +150,17 @@ File additions to `tests/unit/test_metrics.py`:
 
 ## Phase 3 Tests (add when Phase 3 work begins)
 
+### E2E Tests (new directory)
+- `tests/e2e/test_web.py` — FastAPI + Jinja2 app smoke test
+  - GET / loads the ticker-input form without error
+  - POST /research → verdict card rendered (mocked orchestrator), including
+    the key-figures table and DCF scenario breakdown
+  - Both a US ticker and an .NS ticker render without error
+
+---
+
+## Phase 4 Tests (add when Phase 4 work begins)
+
 ### Unit Tests
 - `compute_quality_score(metrics)` — Python pre-filter scoring used in screener
 
@@ -161,20 +172,17 @@ File additions to `tests/unit/test_metrics.py`:
 
 ---
 
-## Phase 4 Tests (add when Phase 4 work begins)
+## Phase 5 Tests (add when Phase 5 work begins)
 
 ### Integration Tests
 - `tests/integration/test_agents.py` additions:
   - `momentum_agent.analyze()` schema compliance
-
-### E2E Tests (new directory)
-- `tests/e2e/test_dashboard.py` — Streamlit app smoke test
-  - Page loads without error
-  - Ticker input → verdict card rendered (mocked orchestrator)
+- `tests/e2e/test_web.py` additions:
+  - Momentum agent signal renders correctly on the verdict page
 
 ---
 
-## Phase 5 Tests (add when Phase 5 work begins)
+## Phase 6 Tests (add when Phase 6 work begins)
 
 ### New dependencies
 - Add `pytest-asyncio` when LangGraph async workflows are introduced

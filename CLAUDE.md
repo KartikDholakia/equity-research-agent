@@ -50,7 +50,8 @@ read the one that answers what you're trying to do instead of guessing.
 | File | Answers | Read it when |
 |------|---------|--------------|
 | `SPEC.md` | What are we building, and why does this rule/metric exist? | You need the product reasoning behind a feature or investment rule |
-| `PLAN.md` | What phase are we in? What's the next task? What was decided and when? | Start of every session |
+| `PLAN.md` | What phase are we in? What's the next task? | Start of every session |
+| `DECISIONS.md` | Why was each architectural or product choice made? | Before revisiting a past decision or making a new one that overlaps |
 | `ARCHITECTURE.md` | How is the system layered? What changes in which phase? What must never break? | Before touching any agent, tool, or data source |
 | `PHASE2_PLAN.md` | How was the Phase 2 (India + growth agent) build sequenced? | Historical reference only — it documents how one phase was planned, not a template that repeats every phase |
 | `TEST_PLAN.md` | What test framework, directory layout, and coverage do we use? | Writing or locating tests |
@@ -86,7 +87,7 @@ equity-research-agent/
 │   ├── tool_schemas.py        # Anthropic tool definitions for the metric functions
 │   ├── llm_agent.py           # Layer 4 — shared agent tool-use loop (run_agent)
 │   └── formatters.py          # format_verdict_card() + India tax banner
-├── dashboard/                # Empty — Phase 4 (Streamlit Research/Chat screen)
+├── web/                       # Empty — Phase 3 (FastAPI + Jinja2 Research screen)
 ├── digest/                   # Empty — daily digest was cut from roadmap (see PLAN.md Decisions Log)
 ├── tests/
 │   ├── conftest.py           # Shared fixtures
@@ -94,14 +95,16 @@ equity-research-agent/
 │   ├── unit/                 # Pure Python, no network — Layer 2/3 tests
 │   └── integration/          # Mocked APIs — Layer 1/4 tests
 ├── resources/raw/            # Personal reference material (not part of the build)
+├── DECISIONS.md              # All architectural/product decisions with rationale
 ├── main.py                   # CLI entry point
 ├── .env / .env.example       # API keys — .env is gitignored, never commit it
 └── requirements.txt
 ```
 
-Not yet built (planned, see PLAN.md for phase): `risk_manager.py`,
-`portfolio_manager.py`, `momentum_agent.py`, `macro_agent.py`,
-`sentiment_agent.py`, `data/portfolio.py`, `dashboard/app.py`.
+Not yet built (planned, see PLAN.md for phase): `web/app.py` (FastAPI),
+`web/templates/` (Jinja2), `risk_manager.py`, `portfolio_manager.py`,
+`momentum_agent.py`, `macro_agent.py`, `sentiment_agent.py`,
+`data/portfolio.py`.
 
 ---
 
@@ -112,6 +115,9 @@ python main.py --ticker AAPL
 python main.py --ticker ZOMATO.NS
 pytest
 ```
+
+Web UI (Phase 3, once built): `uvicorn web.app:app --reload` — separate entrypoint
+from `main.py`, both call `agents/orchestrator.py` directly, neither wraps the other.
 
 Full setup (uv, venv, `.env`) is in README.md — don't duplicate it here.
 

@@ -1,10 +1,10 @@
 # PLAN.md — Build Tracker
 
 ## Current Phase
-**Phase 1 — First Agent: US Stocks via FMP (CLI)**
+**Phase 3 — Research/Chat Web UI + Content Upgrade**
 
 ## Next Task To Work On
-Phase 1 → Step 1: Project scaffolding
+Phase 3 → Step 1: Pick a free, simple HTML/CSS template for the verdict card
 
 ---
 
@@ -132,9 +132,50 @@ Exit criterion: verdict card on ZOMATO.NS / HDFCBANK.NS feels accurate.
 
 ---
 
-## Phase 3: Screener — Monthly Candidate Finder (CLI)
-Goal: `python main.py --screen india` returns 5 ranked candidates to analyze.
-Exit criterion: screener surfaces stocks you'd actually want to look at.
+## Phase 3: Research/Chat Web UI + Content Upgrade
+Goal: Replace the terminal verdict card with a browser page — same
+orchestrator, richer content. Resequenced ahead of the screener (originally
+Phase 4) per the 2026-06-16 PM/Tech Lead discussion (see Decisions Log):
+terminal output was flagged as both a content/trust problem (prose feels
+generic, can't verify the numbers behind a verdict) and a scan-cost problem
+(ASCII wall of text is tedious to read) — fixing the report you already use
+for every analysis matters more right now than finding new candidates to
+analyze with it.
+Exit criterion: you'd rather open this in a browser than read the CLI card.
+
+- [ ] Pick a free, simple HTML/CSS template (card-based layout) suited to a
+      financial verdict card — no specific template in hand, source one
+- [ ] Build web/app.py (FastAPI) — GET / renders an empty ticker-input form,
+      POST /research calls agents/orchestrator.py and renders the result.
+      main.py (CLI) stays untouched as a separate, independent entrypoint —
+      both call agents/orchestrator.py directly, neither wraps the other.
+- [ ] Build web/templates/verdict.html (Jinja2) — maps the verdict dict
+      (CLAUDE.md Final Verdict Schema) onto the chosen template's markup.
+      Color-code BUY/WATCH/AVOID, clear typographic hierarchy for fair
+      value vs. current price and conviction score.
+- [ ] Content upgrade (folded into this phase, not deferred): surface the
+      ~15-20 raw key figures (tools/key_figures.py) and the 3-scenario DCF
+      breakdown (already computed in value_agent.py) on the page — not just
+      agent prose. Goal: let the user verify the numbers behind the verdict
+      instead of just trusting a sentence.
+- [ ] No charts/data visualization in this phase — explicitly deprioritized
+      in the 2026-06-16 discussion. If revisited later: a price chart with
+      200-DMA overlay can use data already pulled by fetch_price_history()/
+      fetch_technical_indicators() (no new API or cost), and/or a DCF
+      bear/base/bull bar chart from value_agent's existing scenarios. Do not
+      add a new data source for charts without a separate scoping pass.
+- [ ] Test: run a real analysis (one US ticker, one India ticker) end-to-end
+      through the web form and confirm the rendered page matches the
+      verdict dict's actual values.
+
+---
+
+## Phase 4: Screener — Monthly Candidate Finder (CLI + Web)
+Goal: `python main.py --screen india` returns 5 ranked candidates to analyze,
+and the same results render as a web page so you can click straight through
+to a verdict card.
+Exit criterion: screener surfaces stocks you'd actually want to look at, and
+the web table makes it easy to act on them.
 Architecture note: pre-filter universe weekly and cache results — do NOT
 run full 500-stock scan on every invocation (API cost + rate limits).
 
@@ -148,27 +189,28 @@ run full 500-stock scan on every invocation (API cost + rate limits).
       - Return top 5 ranked candidates with one-line thesis each
 - [ ] Build caching layer for universe data (local JSON, weekly refresh)
 - [ ] Add --screen flag to main.py CLI
-- [ ] Test: output 5 reasonable candidates, not junk
+- [ ] Add POST /screen route to web/app.py and web/templates/screener.html
+      — ranked table of 5 candidates (ticker, score, verdict, one-line thesis);
+      each row links to the verdict card form pre-filled with that ticker.
+      No new infrastructure needed — reuses Phase 3's FastAPI app and Jinja2.
+- [ ] Test: output 5 reasonable candidates, not junk; confirm web table renders
+      and links through to verdict card correctly
 
 ---
 
-## Phase 4: Research / Chat UI (Streamlit — single screen)
-Goal: Browser UI where you type a ticker and get a verdict card rendered.
-No portfolio, no watchlist, no home screen — just the core research job.
-Exit criterion: you use this instead of the CLI for stock analysis.
+## Phase 5: Momentum Agent
+Goal: Add an entry-timing signal to the web UI built in Phase 3.
+Exit criterion: momentum_agent output renders correctly on the verdict page.
 
-- [ ] Set up dashboard/app.py with single Research/Chat screen
-      - Text input → calls orchestrator → renders formatted verdict card
-      - No sidebar navigation yet
 - [ ] Build agents/momentum_agent.py
       - RSI, MACD, 200-DMA, volume trends
       - Useful for entry timing on stocks already being watched
 - [ ] Wire momentum_agent into orchestrator (now 5 agents)
-- [ ] Test end-to-end: type "AAPL" → verdict card renders correctly
+- [ ] Test end-to-end on the web UI: ticker in → momentum signal renders correctly
 
 ---
 
-## Phase 5: Portfolio + Watchlist + Review + Allocation
+## Phase 6: Portfolio + Watchlist + Review + Allocation
 Goal: App knows your holdings, can review the portfolio periodically,
 and answer "where should I invest ₹X?"
 Portfolio source: local portfolio.json (exported from Groww / INDMoney).
@@ -194,22 +236,22 @@ Portfolio source: local portfolio.json (exported from Groww / INDMoney).
       - Run screener → analyze top 5-10 candidates → portfolio fit check
       - risk_manager sizes each position
       - Output: ranked candidates with suggested ₹ allocation + rationale
-- [ ] Add Portfolio screen to Streamlit dashboard
+- [ ] Add Portfolio screen to the web UI
       - Holdings table with EOD prices (via yfinance)
       - P&L per position
       - Allocation breakdown: sector, geography, market cap
       - Warning if any position is overweight (>10%)
-- [ ] Add Watchlist screen to Streamlit dashboard
+- [ ] Add Watchlist screen to the web UI
       - Current price vs target entry (progress bar)
       - Alert when stock enters buy zone
 
 ---
 
-## Phase 6: Full Dashboard + Remaining Features (revisit scope here)
-Goal: Assess what Phase 5 revealed is actually needed. Build accordingly.
-Do not plan the detail of this phase until Phase 5 is complete.
+## Phase 7: Full Dashboard + Remaining Features (revisit scope here)
+Goal: Assess what Phase 6 revealed is actually needed. Build accordingly.
+Do not plan the detail of this phase until Phase 6 is complete.
 
-Candidates to build (confirm at Phase 5 retrospective):
+Candidates to build (confirm at Phase 6 retrospective):
 - [ ] Dashboard / Home screen — portfolio pulse + alerts
 - [ ] agents/macro_agent.py — RBI/Fed cycle, FII flows, sector rotation
 - [ ] agents/sentiment_agent.py — news tone, con-call signals (if NotebookLM
@@ -218,41 +260,15 @@ Candidates to build (confirm at Phase 5 retrospective):
 - [ ] Google Sheets migration — only if portfolio.json update friction is real
 - [ ] Daily digest email — only if analysis cadence has increased from monthly
 - [ ] Screener architecture review before adding daily/on-demand runs
+- [ ] Public deployment + sharing: deploy to Render/Fly.io, add a shared
+      password gate (INSTANCE_PASSWORD env var), pre-cache 3–5 analyses for
+      a zero-live-API demo path. Scope this properly once Phase 6 is done and
+      the tool is genuinely useful to share. Per-user accounts are a separate
+      decision at that point.
 
 ---
 
 ## Decisions Log
 
-| Date       | Decision                                                                         |
-|------------|----------------------------------------------------------------------------------|
-| 2026-04-10 | Python chosen over Kotlin — LangGraph ecosystem is Python-native                 |
-| 2026-04-10 | FMP for US deep fundamentals, Screener.in for Indian data                        |
-| 2026-04-10 | NotebookLM used manually for con-call/annual report deep dives                   |
-| 2026-04-10 | Three-file structure: CLAUDE.md + SPEC.md + PLAN.md                              |
-| 2026-04-10 | Build starts with US stocks (Phase 1) before Indian market                       |
-| 2026-05-16 | Phase 1 scoped to 3 agents only (quality/value/bear) — 80% value, less risk      |
-| 2026-05-16 | Google Sheets dropped from near-term — portfolio lives in Groww + INDMoney       |
-| 2026-05-16 | Portfolio store: local portfolio.json updated monthly via CSV export              |
-| 2026-05-16 | Screener moved to Phase 3 (before UI) — monthly cadence means finding candidates |
-| 2026-05-16 | Streamlit UI moved to Phase 4 — CLI sufficient for monthly analysis cadence      |
-| 2026-05-16 | Daily digest cut from roadmap — noise at monthly analysis frequency               |
-| 2026-05-16 | Phase 6 scope intentionally left open — decide after Phase 5 retrospective       |
-| 2026-05-17 | No real-time price API — EOD prices via yfinance are sufficient for long-term analysis |
-| 2026-05-17 | Indian basic fundamentals via yfinance (.NS) — covers income stmt, balance sheet, CF |
-| 2026-05-17 | Indian promoter/pledge data via Screener.in scraping — only source under budget   |
-| 2026-05-17 | Trendlyne GuruQ added (₹2,190/yr) for Phase 3 bulk screener data — not Phase 1-2  |
-| 2026-05-17 | FMP API (~$15/mo) retained for US deep fundamentals — best coverage at the price   |
-| 2026-05-17 | EODHD rejected — fundamentals plan ~₹5,000/mo, Indian promoter data coverage unclear |
-| 2026-05-17 | Orchestrator must route 4 query types: analyze / screen / review / allocate        |
-| 2026-05-17 | Portfolio review: mixed output — brief pulse + flag issues only, runs on schedule   |
-| 2026-05-17 | Allocation query output: ranked candidates + suggested ₹ sizing per position        |
-| 2026-05-18 | quality_agent scores 6 checks (ROE, ROCE, FCF, OCF quality, D/E, interest coverage) weighted to 10 |
-| 2026-05-18 | value_agent: DCF growth rates kept as module constants — Phase 3 will derive from historical FCF CAGR |
-| 2026-05-18 | Graham formula intentionally kept for value signals; irrelevant for asset-light/buyback-heavy stocks |
-| 2026-05-18 | bear_case_agent automates 3 of 7 auto-reject flags (CFQ, receivables, debt growth); remaining 4 need manual/news data not available in Phase 1 |
-| 2026-05-24 | Architecture: 5-layer hybrid — Python for data/math, Claude (tool use) for reasoning. Persona-based agents with tight prompts. See ARCHITECTURE.md. |
-| 2026-05-24 | LangGraph deferred to Phase 5 — plain Anthropic SDK sufficient for Phase 1-4 parallel agent execution |
-| 2026-05-24 | Screener mode (Phase 3) uses two-speed system: Python pre-filter on 500 stocks, LLM only on shortlist of 20-30 — keeps cost under ₹20/run |
-| 2026-05-24 | Phase 1 refactor: current rule-based agents to be replaced with LLM agents (Python computes metrics, Claude reasons via persona prompts) |
-| 2026-05-28 | LLM refactor complete: tools/key_figures.py (Layer 2), tools/metrics.py + tool_schemas.py + llm_agent.py (Layer 3/loop), agents refactored to Claude tool use with Munger/Graham/Burry personas, prompt caching on system prompt block |
-| 2026-06-08 | Phase 2 Steps 4–11 complete: India key figures extractor, 3 new metrics (eps_cagr, promoter_analysis, fii_trend), 3 new tool schemas, growth_agent (Lynch/Fisher persona), quality_agent India extension, orchestrator market-aware routing (4 agents, new weights), India tax banner. 211 tests passing. |
+All architectural and product decisions are in **[DECISIONS.md](DECISIONS.md)**.
+Add new entries there, not here.

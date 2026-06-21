@@ -15,6 +15,44 @@ decision-support system where the human always decides.
 - Tax regime: New regime — aware of LTCG/STCG/slab implications
 - Goals: Wealth building, financial independence by 40, home in 6-10 yrs
 
+**Sharing intent:** The tool is personal-first but not personal-only. Once
+the web UI is solid (Phase 3), it will be shared with parents, friends, and
+future recruiters via a hosted public demo. See "Sharing & Access" below.
+
+---
+
+## Sharing & Access (Phase 3.5+)
+
+### Rollout plan
+1. **Phase 3.5 — Public demo + own hosted instance**: Deploy to Render/Fly.io
+   behind a single shared password (INSTANCE_PASSWORD env var). Pre-computed
+   cached analyses for 3–5 recognisable tickers serve the demo path with zero
+   live API calls. Anyone with the URL + password can access it — parents,
+   friends, recruiters.
+2. **Phase 6+ — Per-user accounts**: Once real portfolio data (personal
+   holdings) enters the app, the shared password gate is replaced with proper
+   per-user separation. Scope and mechanism decided at Phase 6 planning.
+
+### Recruiter demo
+- Pre-cache 3–5 tickers: mix of BUY / WATCH / AVOID, at least one US + one
+  India stock, using company names a recruiter would recognise (e.g. AAPL,
+  ZOMATO.NS, one AVOID case).
+- The demo POST /research route checks for a cached result first — zero live
+  Anthropic or FMP API calls on the cached path.
+- This makes the demo instant and prevents budget abuse from public access.
+
+### What the password gate is NOT
+- It is not a real access-control system — it is a "keep strangers out"
+  measure sufficient for a personal demo tool.
+- It must be replaced (not just upgraded) once personal financial data
+  (portfolio.json, holdings, journal) is accessible via the web UI.
+
+### Frontend tooling (deferred)
+- Claude-generated wireframes/mockups will be used to spec any future
+  full-frontend redesign.
+- Whether to build that frontend manually or via Emergent (emergent.sh)
+  is decided at that later phase — not now.
+
 ---
 
 ## Core Use Cases
@@ -41,18 +79,21 @@ Screens are introduced in phases. Research/Chat is the core product —
 all other screens are supporting infrastructure built once the verdict
 card is trusted.
 
-### Phase 4 — Research / Chat
-- Chat interface for natural language queries
-- Returns structured verdict cards for stock analysis
-- Supports: analyze stock, run screener, portfolio questions
+### Phase 3 — Research / Chat
+- Web form (ticker input → verdict card), not yet a natural-language chat
+  interface — see PLAN.md/2026-06-16 decision. Chat-style multi-query
+  support remains aspirational for a later phase.
+- Returns structured verdict cards for stock analysis, now including the
+  raw key figures and DCF scenario breakdown (not just agent prose)
+- Phase 4+: extend to support run screener, portfolio questions
 
-### Phase 5 — Portfolio
+### Phase 6 — Portfolio
 - All holdings with live prices (read from local portfolio.json)
 - P&L and XIRR per position
 - Allocation breakdown: sector, geography, market cap
 - Warning if any position is overweight (>10% of portfolio)
 
-### Phase 5 — Portfolio Review (periodic)
+### Phase 6 — Portfolio Review (periodic)
 Output format:
 ```
 PORTFOLIO PULSE — [Date]
@@ -72,7 +113,7 @@ Holdings:
 Flag triggers: auto-reject condition met, position >10%, thesis age >6 months.
 Runs on schedule (weekly or monthly) or on demand.
 
-### Phase 5 — Allocation Query
+### Phase 6 — Allocation Query
 Triggered by: "I have ₹X, where should I invest?"
 Output format:
 ```
@@ -91,18 +132,18 @@ WHERE TO INVEST ₹50,000
 Workflow: screener → analyze top candidates → portfolio fit check →
 risk sizing → output ranked list with ₹ allocation per position.
 
-### Phase 5 — Watchlist
+### Phase 6 — Watchlist
 - Stocks being tracked but not yet bought
 - Current price vs target entry price (progress bar)
 - One-line thesis per stock
 - Alert when stock enters buy zone
 
-### Phase 6 — Dashboard (Home)
+### Phase 7 — Dashboard (Home)
 - Portfolio P&L snapshot (today + overall)
 - Top movers in holdings
 - Active alerts (entry price hits, thesis review due)
 
-### Phase 6 — Investment Journal
+### Phase 7 — Investment Journal
 - Every buy has a logged thesis + exit criteria
 - Quarterly: system checks if thesis is still intact
 - Timeline of decisions with agent verdicts at time of purchase
@@ -139,7 +180,7 @@ LAYER 1 — DATA LAYER
 | Technicals             | yfinance                             |
 | News/sentiment         | Google News RSS + FMP news           |
 | Portfolio store        | local portfolio.json                 |
-| Dashboard              | Streamlit                            |
+| Web UI                 | FastAPI + Jinja2 (plain HTML/CSS)    |
 | Scheduling             | APScheduler                          |
 | Language               | Python 3.11+                         |
 

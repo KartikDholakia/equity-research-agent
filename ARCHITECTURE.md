@@ -135,7 +135,21 @@ reduce token cost by ~80% on repeated runs.
   - Focus: revenue CAGR, EPS CAGR, TAM, forward estimates
 - **Layer 5**: Orchestrator now runs 4 agents
 
-#### Phase 3 — Screener
+#### Phase 3 — Research/Chat Web UI + Content Upgrade
+- **New**: Presentation layer — plain HTML/CSS template, served by FastAPI +
+  Jinja2, wraps the same orchestrator. No Streamlit, no JS framework — see
+  PLAN.md's 2026-06-16 Decisions Log entries for the rationale (charts
+  deprioritized, so Streamlit's main edge doesn't apply; plain HTML gives
+  the layout/CSS control the scan-cost complaint actually needs).
+  `main.py` (CLI) and `web/app.py` (FastAPI) are independent entrypoints —
+  both call `agents/orchestrator.py` directly, neither wraps the other.
+- **No new Layer 1-4 work**: the verdict dict already has everything needed;
+  this phase only adds a renderer. Content upgrade (raw key figures table +
+  DCF bear/base/bull breakdown) is surfaced from data already computed in
+  Layer 2/3 — no new data sources.
+- Resequenced ahead of the original Phase 3 (Screener) — see PLAN.md.
+
+#### Phase 4 — Screener
 - **Layer 1**: Add `data/universe.py` — universe cache (Trendlyne / NSE bulk), weekly refresh
 - **Layer 5**: Orchestrator gets a second mode — **screener mode**:
 
@@ -152,13 +166,13 @@ Rationale: running full LLM on 500 stocks = ~₹500/run.
 Pre-filter in Python keeps screener cost under ₹20/run.
 ```
 
-#### Phase 4 — Streamlit UI + Momentum Agent
-- **New**: Presentation layer (Streamlit wraps the same orchestrator)
+#### Phase 5 — Momentum Agent
 - **Layer 4**: Add `momentum_agent` — Stan Druckenmiller persona
   - Focus: RSI, MACD, 200-DMA, volume trends — entry timing
 - **Layer 5**: Orchestrator now runs 5 agents
+- Renders on the web UI built in Phase 3 — no presentation-layer change here.
 
-#### Phase 5 — Portfolio + Allocation (LangGraph enters)
+#### Phase 6 — Portfolio + Allocation (LangGraph enters)
 - **Layer 1**: Add `data/portfolio.py` — reads `portfolio.json`
 - **Layer 4**: Add `risk_manager` and `portfolio_manager` agents
   - Agents now receive a second input: **portfolio context**
@@ -175,7 +189,7 @@ Pre-filter in Python keeps screener cost under ₹20/run.
   - *Allocation query*: screener → analyze candidates → portfolio fit → risk sizing → ranked output
   - Plain `concurrent.futures` is insufficient for stateful multi-step orchestration
 
-#### Phase 6 — Macro + Sentiment (scope TBD after Phase 5)
+#### Phase 7 — Macro + Sentiment (scope TBD after Phase 6)
 - **Layer 1**: Add news RSS feeds, RBI/NSE macro data sources
 - **Layer 4**: Add `macro_agent`, `sentiment_agent` (if manual NotebookLM workflow is too slow)
 
@@ -186,15 +200,15 @@ Pre-filter in Python keeps screener cost under ₹20/run.
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  PRESENTATION LAYER                                      │
-│  CLI (Phase 1–3)              Streamlit (Phase 4+)       │
+│  CLI (Phase 1–2, ongoing)     Web — FastAPI+Jinja2 (Phase 3+) │
 └──────────────────────────┬───────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────┐
 │  ORCHESTRATOR                                            │
 │                                                          │
 │  Phase 1–2:  parallel agents → synthesize                │
-│  Phase 3:    + screener mode (two-speed)                 │
-│  Phase 5+:   LangGraph — stateful multi-step workflows   │
+│  Phase 4:    + screener mode (two-speed)                 │
+│  Phase 6+:   LangGraph — stateful multi-step workflows   │
 └──────────────────────────┬───────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────┐
@@ -202,11 +216,11 @@ Pre-filter in Python keeps screener cost under ₹20/run.
 │                                                          │
 │  Phase 1:  quality · value · bear                        │
 │  Phase 2:  + growth (Lynch / Fisher)                     │
-│  Phase 4:  + momentum (Druckenmiller)                    │
-│  Phase 5:  + risk_manager · portfolio_manager            │
-│  Phase 6:  + macro · sentiment (if needed)               │
+│  Phase 5:  + momentum (Druckenmiller)                    │
+│  Phase 6:  + risk_manager · portfolio_manager            │
+│  Phase 7:  + macro · sentiment (if needed)               │
 │                                                          │
-│  Phase 5+: agents also receive portfolio_context         │
+│  Phase 6+: agents also receive portfolio_context         │
 └──────────────────────────┬───────────────────────────────┘
                            │
 ┌──────────────────────────▼───────────────────────────────┐
@@ -225,9 +239,9 @@ Pre-filter in Python keeps screener cost under ₹20/run.
 │                                                          │
 │  Phase 1:  FMP · yfinance                                │
 │  Phase 2:  + Screener.in scraper                         │
-│  Phase 3:  + Universe cache (Trendlyne / NSE bulk)       │
-│  Phase 5:  + portfolio.json reader                       │
-│  Phase 6:  + News RSS · RBI/NSE macro feeds              │
+│  Phase 4:  + Universe cache (Trendlyne / NSE bulk)       │
+│  Phase 6:  + portfolio.json reader                       │
+│  Phase 7:  + News RSS · RBI/NSE macro feeds              │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -240,4 +254,4 @@ Pre-filter in Python keeps screener cost under ₹20/run.
 3. **Structured output is non-negotiable.** Every agent returns parseable JSON. No free-text verdicts.
 4. **Scores are kept.** 0–10 per agent enables comparability across stocks and over time.
 5. **All tool pools are shared.** Persona prompts govern tool selection, not hard restrictions.
-6. **LangGraph only from Phase 5.** Don't introduce it earlier — plain SDK is simpler and sufficient.
+6. **LangGraph only from Phase 6.** Don't introduce it earlier — plain SDK is simpler and sufficient.
