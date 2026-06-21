@@ -69,8 +69,8 @@ python main.py --screen india
 # Portfolio review
 python main.py --review
 
-# Run the dashboard
-streamlit run dashboard/app.py
+# Run the web UI
+uvicorn web.app:app --reload
 ```
 
 ## Running Tests
@@ -82,7 +82,7 @@ pytest
 ## Project Structure
 
 See the "Project Structure" section in `CLAUDE.md` for the target
-directory layout (`agents/`, `data/`, `tools/`, `dashboard/`, `digest/`,
+directory layout (`agents/`, `data/`, `tools/`, `web/`, `digest/`,
 `tests/`).
 
 ---
