@@ -132,7 +132,7 @@ Exit criterion: verdict card on ZOMATO.NS / HDFCBANK.NS feels accurate.
 
 ---
 
-## Phase 3: Research/Chat Web UI + Content Upgrade
+## Phase 3: Research Web UI + Content Upgrade
 Goal: Replace the terminal verdict card with a browser page — same
 orchestrator, richer content. Resequenced ahead of the screener (originally
 Phase 4) per the 2026-06-16 PM/Tech Lead discussion (see Decisions Log):
@@ -167,10 +167,46 @@ Exit criterion: you'd rather open this in a browser than read the CLI card.
 - [ ] Test: run a real analysis (one US ticker, one India ticker) end-to-end
       through the web form and confirm the rendered page matches the
       verdict dict's actual values.
+- [ ] Streaming via SSE — stream each agent's output to the browser as it
+      completes instead of waiting for all four agents. Use FastAPI's
+      StreamingResponse with Server-Sent Events. Verdict page shows agent
+      cards appearing one by one in real time. Teaching goal: streaming LLM
+      responses + SSE in FastAPI.
 
 ---
 
-## Phase 4: Screener — Monthly Candidate Finder (CLI + Web)
+## Phase 4: Chat Session — Cross-Question the Analysis
+Goal: After the verdict card renders, the user can ask follow-up questions
+about the analysis. The system answers from the already-computed data —
+agent outputs, key figures, DCF scenarios — not from memory.
+Exit criterion: ask 3 follow-up questions on a real analysis and get
+grounded, non-hallucinated answers that reference actual numbers from the report.
+Teaching goal: multi-turn conversation state, context grounding, prompt caching.
+
+- [ ] Build session state: in-memory dict keyed by session ID, stores
+      messages list + full verdict dict per session. Session ID generated
+      on POST /research and embedded in the verdict page.
+- [ ] Build POST /chat endpoint in web/app.py — receives session_id +
+      user message, looks up session state, calls Claude, appends to
+      messages list, returns Claude's reply.
+      System context = full verdict dict + all agent outputs (prompt-cached —
+      same block for all turns in a session, ideal cache breakpoint).
+      Messages = rolling conversation history.
+      Analysis-only scope: if user asks something outside the report, Claude
+      says so rather than fetching new data. Fresh data fetch on demand is a
+      future enhancement.
+- [ ] Build chat UI on verdict.html — text input + message history panel
+      below the verdict card. Use fetch() to POST to /chat and append
+      replies without a page reload. No external chat library needed.
+- [ ] Decide model for chat turns at phase start (lighter/faster vs. same
+      as agents — defer until then).
+- [ ] Test: run an analysis, ask 3-4 follow-up questions, verify answers
+      cite actual numbers from the report (conviction score, fair value,
+      specific flags) rather than generic LLM responses.
+
+---
+
+## Phase 5: Screener — Monthly Candidate Finder (CLI + Web)
 Goal: `python main.py --screen india` returns 5 ranked candidates to analyze,
 and the same results render as a web page so you can click straight through
 to a verdict card.
@@ -198,19 +234,53 @@ run full 500-stock scan on every invocation (API cost + rate limits).
 
 ---
 
-## Phase 5: Momentum Agent
+## Phase 6: Concall Agent — Earnings Call RAG
+Goal: Add a concall_agent that reads and reasons over the last 4 quarters of
+earnings call transcripts. Surfaces management tone, guidance quality, and
+promises vs. delivery — signals the financial numbers alone can't provide.
+Exit criterion: concall_agent produces a meaningful signal on INFY.NS and AAPL;
+orchestrator incorporates it gracefully when transcripts are available.
+Teaching goal: RAG, chunking strategy, ChromaDB, retrieval quality vs. hallucination.
+
+- [ ] Research and confirm transcript sources:
+      India — NSE concall transcripts, MoneyControl earnings page
+      US — Motley Fool earnings transcripts, SEC 8-K filings
+      Pick the most reliably parseable source for each market.
+- [ ] Build data/transcripts.py
+      - fetch_concall_transcripts(ticker, num_quarters=4) → list of raw transcript texts
+      - Lazy-load: check local ChromaDB first; fetch + embed only if missing
+        or stale (older than the most recent quarter boundary)
+- [ ] Set up ChromaDB (persisted to disk)
+      - Chunk transcripts (paragraph-level, ~300-500 tokens per chunk)
+      - Embed chunks and store with ticker + quarter metadata
+      - Cache invalidation: re-embed when a new quarter's transcript is available
+- [ ] Build agents/concall_agent.py (buy-side analyst persona)
+      - Reads between the lines of management commentary
+      - Tracks promises vs. delivery across quarters
+      - Flags tone changes, hedging language, guidance misses
+      - Tool: query_transcript(question) → retrieves top-k relevant chunks via ChromaDB
+      - Output: standard agent signal dict
+- [ ] Add tool schema for query_transcript to tools/tool_schemas.py
+- [ ] Wire into orchestrator: 5th agent when transcripts are available;
+      skip gracefully with a note in the verdict if no transcripts found.
+- [ ] Test on INFY.NS (good concall availability) and AAPL; verify retrieved
+      chunks are relevant and the agent's signal is grounded in actual transcript text.
+
+---
+
+## Phase 7: Momentum Agent
 Goal: Add an entry-timing signal to the web UI built in Phase 3.
 Exit criterion: momentum_agent output renders correctly on the verdict page.
 
 - [ ] Build agents/momentum_agent.py
       - RSI, MACD, 200-DMA, volume trends
       - Useful for entry timing on stocks already being watched
-- [ ] Wire momentum_agent into orchestrator (now 5 agents)
+- [ ] Wire momentum_agent into orchestrator (now 6 agents)
 - [ ] Test end-to-end on the web UI: ticker in → momentum signal renders correctly
 
 ---
 
-## Phase 6: Portfolio + Watchlist + Review + Allocation
+## Phase 8: Portfolio + Watchlist + Review + Allocation
 Goal: App knows your holdings, can review the portfolio periodically,
 and answer "where should I invest ₹X?"
 Portfolio source: local portfolio.json (exported from Groww / INDMoney).
@@ -247,22 +317,24 @@ Portfolio source: local portfolio.json (exported from Groww / INDMoney).
 
 ---
 
-## Phase 7: Full Dashboard + Remaining Features (revisit scope here)
-Goal: Assess what Phase 6 revealed is actually needed. Build accordingly.
-Do not plan the detail of this phase until Phase 6 is complete.
+## Phase 9: Full Dashboard + Remaining Features (revisit scope here)
+Goal: Assess what Phase 8 revealed is actually needed. Build accordingly.
+Do not plan the detail of this phase until Phase 8 is complete.
 
-Candidates to build (confirm at Phase 6 retrospective):
+Candidates to build (confirm at Phase 8 retrospective):
 - [ ] Dashboard / Home screen — portfolio pulse + alerts
 - [ ] agents/macro_agent.py — RBI/Fed cycle, FII flows, sector rotation
 - [ ] agents/sentiment_agent.py — news tone, con-call signals (if NotebookLM
       manual workflow is proving too slow)
 - [ ] Investment Journal — thesis logging + quarterly review
+- [ ] Chat with optional fresh data fetch — triggered by user cross-question
+      when existing analysis doesn't have the answer (extends Phase 4 chat)
 - [ ] Google Sheets migration — only if portfolio.json update friction is real
 - [ ] Daily digest email — only if analysis cadence has increased from monthly
 - [ ] Screener architecture review before adding daily/on-demand runs
 - [ ] Public deployment + sharing: deploy to Render/Fly.io, add a shared
       password gate (INSTANCE_PASSWORD env var), pre-cache 3–5 analyses for
-      a zero-live-API demo path. Scope this properly once Phase 6 is done and
+      a zero-live-API demo path. Scope this properly once Phase 8 is done and
       the tool is genuinely useful to share. Per-user accounts are a separate
       decision at that point.
 
