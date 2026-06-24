@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Equity Research{% endblock %}
+
+{% block body %}
+<div class="home">
+  <div class="home-box">
+    <h1>Research a stock</h1>
+    <p class="sub">AI-powered fundamental analysis — Indian &amp; US equities</p>
+
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/research" id="rf">
+      <div class="field">
+        <label class="field-label" for="ticker">Ticker symbol</label>
+        <input
+          type="text" id="ticker" name="ticker"
+          placeholder="AAPL · ZOMATO.NS · HDFCBANK.NS"
+          autocomplete="off" spellcheck="false" autofocus required
+        >
+      </div>
+
+      <div class="field">
+        <label class="field-label">Market</label>
+        <div class="radio-row">
+          <label class="radio-opt">
+            <input type="radio" name="market" value="us" checked> US
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="market" value="india"> India (.NS / .BO)
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="sb">Analyse →</button>
+    </form>
+
+    <p class="examples">
+      <span>Try:</span>
+      <span>AAPL</span>
+      <span>NVDA</span>
+      <span>ZOMATO.NS</span>
+      <span>INFY.NS</span>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('rf').addEventListener('submit', function () {
+    var ticker = document.getElementById('ticker').value.trim().toUpperCase();
+    var btn = document.getElementById('sb');
+    btn.textContent = 'Analysing ' + (ticker || '…') + ' (30–60 s)';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

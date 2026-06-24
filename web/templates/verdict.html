@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% block title %}{{ verdict.ticker }} · Equity Research{% endblock %}
+
+{% block nav_extra %}
+<a href="/">← New analysis</a>
+{% endblock %}
+
+{% block body %}
+
+{# ── Helpers ────────────────────────────────────────────────────── #}
+
+{% macro compact(v, sym='') -%}
+{%- if v is none or v is undefined -%}—
+{%- else -%}
+  {%- set n = v | float -%}
+  {%- if n == 0 -%}—
+  {%- elif (n | abs) >= 1000000000000 -%}{{ sym }}{{ (n / 1000000000000) | round(2) }}T
+  {%- elif (n | abs) >= 1000000000    -%}{{ sym }}{{ (n / 1000000000)    | round(1) }}B
+  {%- elif (n | abs) >= 1000000       -%}{{ sym }}{{ (n / 1000000)       | round(1) }}M
+  {%- elif (n | abs) >= 1000          -%}{{ sym }}{{ (n / 1000)          | round(1) }}K
+  {%- else -%}{{ sym }}{{ n | round(2) }}
+  {%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{# Multi-year sparkrow: latest + YoY % then prior values greyed out #}
+{% macro sparkrow(lst, sym='') -%}
+{%- if not lst -%}—
+{%- else -%}
+<span>{{ compact(lst[0], sym) }}</span>
+{%- if lst | length >= 2 and lst[1] is not none and lst[1] != 0 -%}
+  {%- set yoy = ((lst[0] - lst[1]) / (lst[1] | abs) * 100) | round(0) | int -%}
+  &thinsp;<span class="kf-yoy {% if yoy >= 0 %}kf-yoy-pos{% else %}kf-yoy-neg{% endif %}">{{ "%+d" | format(yoy) }}%</span>
+{%- endif -%}
+&emsp;
+{%- if lst | length >= 2 %}<span class="kf-older">{{ compact(lst[1], sym) }}</span>{% endif %}
+{%- if lst | length >= 3 %}&thinsp;<span class="kf-oldest">·&thinsp;{{ compact(lst[2], sym) }}</span>{% endif %}
+{%- endif -%}
+{%- endmacro %}
+
+{% set agent_meta = {
+  "quality_agent":   {"label": "Quality",   "persona": "Munger · Malik"},
+  "value_agent":     {"label": "Value",     "persona": "Graham · Pabrai"},
+  "growth_agent":    {"label": "Growth",    "persona": "Lynch · Fisher"},
+  "bear_case_agent": {"label": "Bear Case", "persona": "Burry"},
+} %}
+
+{% set vd  = verdict.verdict %}
+{% set sym = currency %}
+{% set cp  = verdict.current_price %}
+{% set fv  = verdict.fair_value %}
+{% set up  = verdict.upside_pct %}
+
+{# ── Derived ratios ─────────────────────────────────────────────── #}
+{% set de_ratio = ((key_figures.total_debts[0] / key_figures.equities[0]) | round(2))
+   if (key_figures.total_debts and key_figures.equities
+       and key_figures.equities | length > 0
+       and key_figures.equities[0] != 0)
+   else none %}
+
+{% set int_cov = ((key_figures.operating_incomes[0] / key_figures.interest_expenses[0]) | round(1))
+   if (key_figures.operating_incomes and key_figures.interest_expenses
+       and key_figures.interest_expenses | length > 0
+       and key_figures.interest_expenses[0] != 0)
+   else none %}
+
+{% set curr_pe = none %}
+{% if not is_india and key_figures.earnings_yields is defined
+      and key_figures.earnings_yields and key_figures.earnings_yields[0] != 0 %}
+  {% set curr_pe = (1 / key_figures.earnings_yields[0]) | round(1) %}
+{% endif %}
+
+<div class="page">
+<div class="wrap">
+
+  {# ── Header ────────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="hd">
+      <div class="hd-left">
+        <div class="hd-ticker">{{ verdict.ticker }}</div>
+        <div class="hd-date">{{ verdict.generated_at[:10] }}</div>
+        <div class="hd-pricing">
+          <div class="hd-price-item">
+            <span class="lbl">Current</span>
+            <span class="val">{% if cp is not none %}{{ sym }}{{ "%.2f" | format(cp) }}{% else %}—{% endif %}</span>
+          </div>
+          {% if fv is not none %}
+          <div class="hd-price-item">
+            <span class="lbl">Fair Value</span>
+            <span class="val">{{ sym }}{{ "%.2f" | format(fv) }}</span>
+          </div>
+          {% endif %}
+          {% if up is not none %}
+          <div class="hd-price-item">
+            <span class="lbl">Upside</span>
+            <span class="val {% if up >= 0 %}up-pos{% else %}up-neg{% endif %}">{{ "%+.1f" | format(up) }}%</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="hd-right">
+        <div class="verdict-badge vd-{{ vd }}">{{ vd }}</div>
+        <div class="conviction">
+          Conviction&nbsp;
+          <strong>{{ "%.1f" | format(verdict.conviction) }}</strong>
+          <span style="color:var(--t3)">&thinsp;/ 10</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Agent signals ──────────────────────────────────────────────── #}
+  <p class="card-label" style="margin-bottom:8px;">Agent Signals</p>
+  <div class="agent-grid">
+    {% for sig in verdict.agent_signals %}
+    {% set meta   = agent_meta.get(sig.agent, {"label": sig.agent, "persona": ""}) %}
+    {% set signal = sig.signal | lower %}
+    <div class="agent-card sig-{{ signal }}">
+      <div class="agent-top">
+        <div>
+          <div class="agent-name">{{ meta.label }}</div>
+          <div class="agent-persona">{{ meta.persona }}</div>
+        </div>
+        <div class="agent-score">{{ "%.1f" | format(sig.score) }}</div>
+      </div>
+      <div class="signal-pill">{{ signal }}</div>
+      <ul class="agent-summary">
+        {% for part in sig.summary.split('•') %}
+        {% set b = part.strip() %}
+        {% if b %}<li>{{ b }}</li>{% endif %}
+        {% endfor %}
+      </ul>
+      {% if sig.flags %}
+      <ul class="agent-flags">
+        {% for flag in sig.flags %}
+        <li{% if 'AUTO-REJECT' in flag %} class="flag-critical"{% endif %}>{{ flag }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Bull reasons + Risks ──────────────────────────────────────── #}
+  <div class="two-col">
+    <div class="card card-bull" style="margin-bottom:0;">
+      <p class="panel-label">Bull Case</p>
+      <ul class="bull-list">
+        {% for reason in verdict.bull_reasons %}
+        {% for part in reason.split('•') %}
+        {% set b = part.strip() %}
+        {% if b %}<li>{{ b }}</li>{% endif %}
+        {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="card card-risk" style="margin-bottom:0;">
+      <p class="panel-label">Risks</p>
+      <ul class="risk-list">
+        {% for risk in verdict.risks %}
+        <li{% if 'AUTO-REJECT' in risk %} class="risk-critical"{% endif %}>{{ risk }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div style="margin-bottom:12px;"></div>
+
+  {# ── Key figures ───────────────────────────────────────────────── #}
+  <div class="card">
+    <p class="card-label">Key Figures <span class="kf-legend">latest · prior · prior</span></p>
+    <table class="kf-table">
+      <tbody>
+        <tr class="kf-section"><td colspan="2">Income</td></tr>
+        <tr>
+          <td>Revenue</td>
+          <td>{{ sparkrow(key_figures.revenues, sym) }}</td>
+        </tr>
+        <tr>
+          <td>Net Income</td>
+          <td>{{ sparkrow(key_figures.net_incomes, sym) }}</td>
+        </tr>
+        <tr>
+          <td>Operating Income</td>
+          <td>{{ sparkrow(key_figures.operating_incomes, sym) }}</td>
+        </tr>
+
+        <tr class="kf-section"><td colspan="2">Cash Flow</td></tr>
+        <tr>
+          <td>Operating Cash Flow</td>
+          <td>{{ sparkrow(key_figures.ocfs, sym) }}</td>
+        </tr>
+        <tr>
+          <td>Free Cash Flow</td>
+          <td>{{ sparkrow(key_figures.fcfs, sym) }}</td>
+        </tr>
+        <tr>
+          <td>FCF Yield (3yr avg)</td>
+          <td>{% if key_figures.fcf_yield is not none %}{{ "%.2f" | format(key_figures.fcf_yield * 100) }}%{% else %}—{% endif %}</td>
+        </tr>
+
+        <tr class="kf-section"><td colspan="2">Balance Sheet</td></tr>
+        <tr>
+          <td>Total Debt</td>
+          <td>{{ compact(key_figures.total_debts[0] if key_figures.total_debts else none, sym) }}</td>
+        </tr>
+        <tr>
+          <td>Equity</td>
+          <td>{{ compact(key_figures.equities[0] if key_figures.equities else none, sym) }}</td>
+        </tr>
+        {% if de_ratio is not none %}
+        <tr>
+          <td>D/E Ratio</td>
+          <td>{{ "%.2f" | format(de_ratio) }}×</td>
+        </tr>
+        {% endif %}
+        {% if int_cov is not none %}
+        <tr>
+          <td>Interest Coverage</td>
+          <td>{{ "%.1f" | format(int_cov) }}×</td>
+        </tr>
+        {% endif %}
+
+        <tr class="kf-section"><td colspan="2">Valuation</td></tr>
+        {% if curr_pe is not none %}
+        <tr>
+          <td>Current P/E</td>
+          <td>{{ "%.1f" | format(curr_pe) }}×</td>
+        </tr>
+        {% endif %}
+        {% if is_india and key_figures.forward_pe is not none %}
+        <tr>
+          <td>Forward P/E</td>
+          <td>{{ "%.1f" | format(key_figures.forward_pe | float) }}×</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td>PEG Ratio</td>
+          <td>{% if key_figures.peg_ratio is not none %}{{ "%.2f" | format(key_figures.peg_ratio | float) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% if not is_india %}
+        <tr>
+          <td>Graham Number</td>
+          <td>{% if key_figures.graham_number is defined and key_figures.graham_number is not none %}{{ sym }}{{ "%.2f" | format(key_figures.graham_number | float) }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endif %}
+
+        {% if is_india %}
+        <tr class="kf-section"><td colspan="2">India — Ownership</td></tr>
+        <tr>
+          <td>Promoter Holding</td>
+          <td>{% if key_figures.promoter_pct is not none %}{{ "%.1f" | format(key_figures.promoter_pct | float) }}%{% else %}—{% endif %}</td>
+        </tr>
+        <tr>
+          <td>Promoter Pledging</td>
+          <td>{% if key_figures.pledging_pct is not none %}{{ "%.1f" | format(key_figures.pledging_pct | float) }}%{% else %}—{% endif %}</td>
+        </tr>
+        <tr>
+          <td>FII Holding</td>
+          <td>
+            {% if key_figures.fii_pct is not none %}{{ "%.1f" | format(key_figures.fii_pct | float) }}%{% else %}—{% endif %}
+            {% if key_figures.fii_trend %}
+            &nbsp;<span class="
+              {%- if key_figures.fii_trend == 'rising' %}trend-up
+              {%- elif key_figures.fii_trend == 'falling' %}trend-dn
+              {%- else %}trend-flat{% endif %}">{{ key_figures.fii_trend }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── DCF Scenarios ─────────────────────────────────────────────── #}
+  {% if dcf and dcf.base %}
+  {% set max_val = [dcf.bull or 0, dcf.base or 0, dcf.bear or 0, cp or 0] | max %}
+  <div class="card">
+    <p class="card-label">DCF Valuation</p>
+    <ul class="dcf-rows">
+      {% if dcf.bear is not none %}
+      <li class="dcf-row">
+        <span class="dcf-lbl">Bear &nbsp;<small>(5% growth)</small></span>
+        <span class="dcf-val">{{ sym }}{{ "%.2f" | format(dcf.bear) }}</span>
+        <div class="dcf-bar"><div class="dcf-fill bear" style="width:{{ ((dcf.bear / max_val) * 100) | round(1) }}%"></div></div>
+      </li>
+      {% endif %}
+      <li class="dcf-row">
+        <span class="dcf-lbl">Base &nbsp;<small>(10% growth)</small></span>
+        <span class="dcf-val">{{ sym }}{{ "%.2f" | format(dcf.base) }}</span>
+        <div class="dcf-bar"><div class="dcf-fill base" style="width:{{ ((dcf.base / max_val) * 100) | round(1) }}%"></div></div>
+      </li>
+      {% if dcf.bull is not none %}
+      <li class="dcf-row">
+        <span class="dcf-lbl">Bull &nbsp;<small>(15% growth)</small></span>
+        <span class="dcf-val">{{ sym }}{{ "%.2f" | format(dcf.bull) }}</span>
+        <div class="dcf-bar"><div class="dcf-fill bull" style="width:{{ ((dcf.bull / max_val) * 100) | round(1) }}%"></div></div>
+      </li>
+      {% endif %}
+      {% if cp %}
+      <li class="dcf-row">
+        <span class="dcf-lbl">Current price</span>
+        <span class="dcf-val">{{ sym }}{{ "%.2f" | format(cp) }}</span>
+        <div class="dcf-bar"><div class="dcf-fill now" style="width:{{ ((cp / max_val) * 100) | round(1) }}%"></div></div>
+      </li>
+      {% endif %}
+    </ul>
+    {% if dcf.margin_of_safety_base_pct is not none %}
+    <p class="dcf-mos">
+      Margin of safety vs base case:&nbsp;
+      <span class="{% if dcf.margin_of_safety_base_pct >= 0 %}mos-pos{% else %}mos-neg{% endif %}">
+        {{ "%+.1f" | format(dcf.margin_of_safety_base_pct) }}%
+      </span>
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── What changes mind ─────────────────────────────────────────── #}
+  <div class="card">
+    <p class="card-label">What Changes My Mind</p>
+    <div class="wcm-grid">
+      <div class="wcm-item">
+        <p class="wcm-tag bull">↑ Bull trigger</p>
+        <p>{{ verdict.what_changes_mind.bull | default('—') }}</p>
+      </div>
+      <div class="wcm-item">
+        <p class="wcm-tag bear">↓ Bear trigger</p>
+        <p>{{ verdict.what_changes_mind.bear | default('—') }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# ── India tax note ────────────────────────────────────────────── #}
+  {% if is_india %}
+  <div class="tax-note">
+    <strong>India Tax</strong> &mdash;
+    LTCG &gt;₹1 lakh taxed at 12.5% (equity held &gt;1 year).
+    STCG taxed at 20% (held ≤1 year). STT applies on all trades.
+  </div>
+  {% endif %}
+
+  <p class="pg-footer">
+    Generated {{ verdict.generated_at[:19] | replace("T", " ") }} UTC
+  </p>
+
+</div>
+</div>
+{% endblock %}

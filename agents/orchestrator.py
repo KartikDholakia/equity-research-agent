@@ -16,13 +16,21 @@ _W_GROWTH  = 0.20
 _W_BEAR    = 0.20
 
 
+def get_verdict_data(
+    ticker: str, market: str = "us"
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return (verdict_dict, key_figures) without printing — for web UI use."""
+    data = _fetch_data(ticker, market)
+    agent_outputs = _run_agents(ticker, data)
+    verdict = _synthesize(ticker, agent_outputs, data)
+    return verdict, data["key_figures"]
+
+
 def run_analysis(ticker: str, market: str = "us") -> None:
     """Full single-stock analysis: fetch data, run agents, synthesize, print."""
     print(f"\nAnalyzing {ticker} ({market.upper()}) — fetching data ...\n")
     try:
-        data = _fetch_data(ticker, market)
-        agent_outputs = _run_agents(ticker, data)
-        verdict = _synthesize(ticker, agent_outputs, data)
+        verdict, _ = get_verdict_data(ticker, market)
         print(format_verdict_card(verdict))
     except Exception as exc:
         print(f"Analysis failed for {ticker}: {exc}")
