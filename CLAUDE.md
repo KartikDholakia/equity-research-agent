@@ -59,6 +59,7 @@ read the one that answers what you're trying to do instead of guessing.
 | `.claude/PM_AGENT.md` | Product-manager persona for scope/priority critique | User says "enter PM mode" |
 | `.claude/DEV_AGENT.md` | Tech-lead persona for architecture/code-quality critique | User says "enter dev mode" |
 | `.claude/skills/smart-commit` | Skill that commits pending changes as granular, user-approved commits | User asks to commit, or work is ready to land |
+| `FUTURE.md` | Unscoped ideas not assigned to any phase (frontend revamp, threshold annotations, public deployment) | An idea comes up that's worth keeping but not acting on yet |
 
 ---
 
@@ -87,7 +88,15 @@ equity-research-agent/
 │   ├── tool_schemas.py        # Anthropic tool definitions for the metric functions
 │   ├── llm_agent.py           # Layer 4 — shared agent tool-use loop (run_agent)
 │   └── formatters.py          # format_verdict_card() + India tax banner
-├── web/                       # Empty — Phase 3 (FastAPI + Jinja2 Research screen)
+├── web/
+│   ├── __init__.py
+│   ├── app.py                   # FastAPI — GET / and POST /research; mounts /static
+│   ├── static/
+│   │   └── style.css            # All CSS (dark minimal theme); served at /static/style.css
+│   └── templates/
+│       ├── base.html            # Shared shell — links style.css, nav block
+│       ├── index.html           # Ticker-input form (extends base)
+│       └── verdict.html         # Full verdict page (extends base; expects: verdict, key_figures, dcf, currency, is_india)
 ├── digest/                   # Empty — daily digest was cut from roadmap (see PLAN.md Decisions Log)
 ├── tests/
 │   ├── conftest.py           # Shared fixtures
@@ -102,7 +111,7 @@ equity-research-agent/
 ```
 
 Not yet built (planned, see PLAN.md for phase): `web/app.py` (FastAPI),
-`web/templates/` (Jinja2), `risk_manager.py`, `portfolio_manager.py`,
+`risk_manager.py`, `portfolio_manager.py`,
 `momentum_agent.py`, `macro_agent.py`, `sentiment_agent.py`,
 `data/portfolio.py`.
 

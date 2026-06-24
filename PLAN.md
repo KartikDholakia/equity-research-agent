@@ -143,21 +143,40 @@ for every analysis matters more right now than finding new candidates to
 analyze with it.
 Exit criterion: you'd rather open this in a browser than read the CLI card.
 
-- [ ] Pick a free, simple HTML/CSS template (card-based layout) suited to a
-      financial verdict card — no specific template in hand, source one
-- [ ] Build web/app.py (FastAPI) — GET / renders an empty ticker-input form,
-      POST /research calls agents/orchestrator.py and renders the result.
-      main.py (CLI) stays untouched as a separate, independent entrypoint —
-      both call agents/orchestrator.py directly, neither wraps the other.
-- [ ] Build web/templates/verdict.html (Jinja2) — maps the verdict dict
-      (CLAUDE.md Final Verdict Schema) onto the chosen template's markup.
-      Color-code BUY/WATCH/AVOID, clear typographic hierarchy for fair
-      value vs. current price and conviction score.
-- [ ] Content upgrade (folded into this phase, not deferred): surface the
-      ~15-20 raw key figures (tools/key_figures.py) and the 3-scenario DCF
-      breakdown (already computed in value_agent.py) on the page — not just
-      agent prose. Goal: let the user verify the numbers behind the verdict
-      instead of just trusting a sentence.
+- [x] Design and build the verdict page — merged from template selection and
+      Jinja2 template implementation (kept separate originally, merged 2026-06-23
+      because the two tasks are too tightly coupled to sequence independently).
+      Aesthetic: clean, minimal, dark. No CSS framework, no JS library — plain
+      HTML + CSS only.
+      Deliverables:
+        web/templates/index.html — ticker-input form, same dark aesthetic
+        web/templates/verdict.html — full verdict dict rendered as a page
+      Page sections:
+        Header: ticker, verdict badge (BUY/WATCH/AVOID), conviction score,
+                current price vs fair value with upside %
+        Agent cards: one card per agent — signal color, score, summary, flags
+        Key figures table: ~15-20 raw numbers from tools/key_figures.py
+        DCF scenarios: bear / base / bull from value_agent.py
+        Bull reasons + risks (top 3 each)
+        What changes mind section
+        India tax banner when applicable
+      Color convention: BUY = green, WATCH = amber, AVOID = red.
+- [x] Build web/app.py (FastAPI) — GET / renders index.html, POST /research
+      calls agents/orchestrator.py and renders verdict.html with the result.
+      Add a minimal "Analysing…" loading indicator on form submit — no SSE yet
+      (see streaming task below). main.py (CLI) stays untouched as a separate,
+      independent entrypoint — both call agents/orchestrator.py directly,
+      neither wraps the other.
+- [x] Content upgrade: surface the ~15-20 raw key figures (tools/key_figures.py)
+      and the 3-scenario DCF breakdown (already computed in value_agent.py) on
+      the verdict page alongside agent prose. Numbers are shown raw for now;
+      threshold annotations are deferred to the last task in this phase.
+      Goal: let the user verify the numbers behind the verdict instead of
+      trusting a sentence alone.
+      Delivered: multi-year sparkrow (latest · prior · prior) for Revenue,
+      Net Income, Operating Income, OCF, FCF; computed D/E ratio, Interest
+      Coverage, Current P/E (US) / Forward P/E (India); India safety guards
+      for fields absent from extract_df_key_figures.
 - [ ] No charts/data visualization in this phase — explicitly deprioritized
       in the 2026-06-16 discussion. If revisited later: a price chart with
       200-DMA overlay can use data already pulled by fetch_price_history()/
@@ -172,6 +191,12 @@ Exit criterion: you'd rather open this in a browser than read the CLI card.
       StreamingResponse with Server-Sent Events. Verdict page shows agent
       cards appearing one by one in real time. Teaching goal: streaming LLM
       responses + SSE in FastAPI.
+- [ ] Numbers with threshold context — annotate each displayed metric with its
+      persona-specific pass/fail interpretation (e.g. "ROE 24% → above Munger's
+      15% quality bar", "PEG 0.8 → below Lynch's 1.0 threshold"). Requires a
+      threshold registry mapping each metric to the relevant agent's criteria.
+      Teaching goal: turning raw numbers into verifiable reasoning traces, not
+      just a wall of figures.
 
 ---
 
