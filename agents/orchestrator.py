@@ -74,11 +74,13 @@ def _fetch_data_us(ticker: str) -> dict[str, Any]:
         "cash_flows":        lambda: fmp.fetch_cash_flow(ticker),
         "key_metrics":       lambda: fmp.fetch_key_metrics(ticker),
         "price_data":        lambda: yfinance_client.fetch_current_price(ticker),
+        "company_name":      lambda: yfinance_client.fetch_company_name(ticker),
     }
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         futures = {key: pool.submit(fn) for key, fn in fns.items()}
         raw: dict[str, Any] = {key: fut.result() for key, fut in futures.items()}
 
+    raw["price_data"]["company_name"] = raw.pop("company_name")
     raw["key_figures"] = extract_key_figures(
         ticker,
         raw["income_statements"],

@@ -101,6 +101,7 @@ def get_demo(request: Request) -> Any:
 
     key_figures = {
         "ticker":               "ZOMATO.NS",
+        "company_name":         "Zomato Limited",
         "current_price":        234.75,
         "revenues":             [32492000000, 19498000000, 11462000000, 5765000000],
         "net_incomes":          [3510000000, -9710000000, -10560000000, -8160000000],
@@ -143,6 +144,14 @@ def get_demo(request: Request) -> Any:
             "is_india":    True,
         },
     )
+
+
+@app.get("/research", response_class=HTMLResponse)
+def get_research(request: Request, ticker: str = "", market: str = "us") -> Any:
+    """Handle nav search bar GET requests by delegating to the POST logic."""
+    if not ticker.strip():
+        return templates.TemplateResponse(request, "index.html")
+    return post_research(request, ticker=ticker, market=market)
 
 
 @app.post("/research", response_class=HTMLResponse)

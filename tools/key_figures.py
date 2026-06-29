@@ -26,6 +26,7 @@ def extract_key_figures(
 
     return {
         "ticker":              ticker,
+        "company_name":        price_data.get("company_name"),
         "current_price":       float(price_data.get("price") or 0) or None,
         "revenues":            _pull(income_statements, "revenue"),
         "net_incomes":         _pull(income_statements, "netIncome"),
@@ -110,6 +111,7 @@ def extract_df_key_figures(
 
     return {
         "ticker":                   ticker,
+        "company_name":             _info.get("longName") or _info.get("shortName"),
         "current_price":            float(price_data.get("price") or 0) or None,
         "revenues":                 revenues,
         "net_incomes":              net_incomes,

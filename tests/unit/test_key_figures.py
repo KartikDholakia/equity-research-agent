@@ -64,13 +64,13 @@ def _extract(income=None, balance=None, cashflow=None, metrics=None, price=None)
 
 class TestOutputSchema:
     EXPECTED_KEYS = {
-        "ticker", "current_price", "revenues", "net_incomes", "operating_incomes",
-        "interest_expenses", "equities", "total_assets", "current_liabilities",
-        "total_debts", "net_receivables", "ocfs", "fcfs",
+        "ticker", "company_name", "current_price", "revenues", "net_incomes",
+        "operating_incomes", "interest_expenses", "equities", "total_assets",
+        "current_liabilities", "total_debts", "net_receivables", "ocfs", "fcfs",
         "peg_ratio", "graham_number", "fcf_yield", "earnings_yields",
     }
 
-    def test_all_17_keys_present_on_full_fixture_data(self, sample_key_figures):
+    def test_all_18_keys_present_on_full_fixture_data(self, sample_key_figures):
         assert set(sample_key_figures.keys()) == self.EXPECTED_KEYS
 
     def test_ticker_is_string(self, sample_key_figures):

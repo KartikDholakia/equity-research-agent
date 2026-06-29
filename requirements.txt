@@ -31,7 +31,10 @@ streamlit>=1.41.0
 # Scheduling (Phase 5)
 apscheduler>=3.10.0
 
-# Google Sheets (Phase 6 — install when needed)
+# Concall RAG (Phase 6)
+chromadb>=0.5.0
+
+# Google Sheets (Phase 7 — install when needed)
 # gspread>=6.0.0
 # google-auth>=2.30.0
 

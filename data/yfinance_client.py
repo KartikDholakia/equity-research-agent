@@ -35,6 +35,15 @@ def fetch_current_price(ticker: str) -> dict[str, Any]:
     }
 
 
+def fetch_company_name(ticker: str) -> str | None:
+    """Return the long name for a ticker from yfinance info, or None on failure."""
+    try:
+        info = yf.Ticker(ticker).info or {}
+        return info.get("longName") or info.get("shortName")
+    except Exception:
+        return None
+
+
 def fetch_price_history(
     ticker: str,
     period: str = "1y",
